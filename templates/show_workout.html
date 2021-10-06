@@ -1,0 +1,29 @@
+{% include "header.html" %}
+
+<h3>Veuillez choisir l'exercice pour lequel vous souhaitez ajouter une performance :</h3>
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <p><i class="far fa-check-circle"></i>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+{% if all_exercises == [] %}
+    <p><em>Vous n'avez pas encore ajouté d'exercice pour le moment. <a href="{{url_for('add_new_exercise', user_id=current_user.id)}}">Cliquez ici</a> pour en ajouter.</em></p>
+{% else %}
+    <ul>
+    {% for exercise in all_exercises %}
+        <li>
+            <p>{{exercise.exercise_name.title()}} :
+                <a href="{{url_for('edit_workout', user_id=current_user.id, exercise_id=exercise.id)}}">Ajouter une performance</a> -
+                <a href="{{url_for('advanced_edit', user_id=current_user.id, exercise_id=exercise.id)}}">Modifier une performance</a> -
+                <a href="{{url_for('delete_workout', user_id=current_user.id, exercise_id=exercise.id)}}">Supprimer l'exercice</a>
+            </p>
+        </li>
+    {% endfor %}
+    </ul>
+{% endif %}
+</body>
+</html>

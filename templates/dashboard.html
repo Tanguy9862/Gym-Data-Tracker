@@ -1,0 +1,35 @@
+{% include "header.html" %}
+
+{% if is_new_exercise == True %}
+    <p>Le nouvel exercice a été ajouté avec succès.</p>
+{% endif %}
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <p><i class="far fa-check-circle"></i> {{ message }}</p>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+{% if not has_data %}
+    <p><i class="fas fa-info-circle"></i> Vous n'avez pas encore enregistré de données. <a href="{{url_for('add_new_exercise', user_id=current_user.id)}}">Cliquez ici</a> pour ajouter un nouvel exercice</p>
+
+{% else %}
+
+    {% for table in global_performance_tables %}
+        <h3>{{global_performance_title}}</h3>
+        {{ table|safe }}
+    {% endfor %}
+
+    {% for table in specific_tables %}
+        {% if table|length > 345 %}
+            <h3>{{specific_titles[loop.index - 1]}} :</h3>
+            {{ table|safe }}
+        {% endif %}
+    {% endfor %}
+
+{% endif %}
+
+</body>
+</html>

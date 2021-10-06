@@ -1,0 +1,16 @@
+{% include "header.html" %}
+
+{% if has_data %}
+    <center>
+    <img src={{url_avatar}}>
+    {% for table in global_performance_tables %}
+            <h3>{{global_performance_title}}</h3>
+            {{ table|safe }}
+    {% endfor %}
+    </center>
+{% else %}
+    <p><i class="fas fa-info-circle"></i> {{user.username}} n'a pas encore enregistré de données.</p>
+{% endif %}
+
+</body>
+</html>

@@ -1,0 +1,51 @@
+{% include "header.html" %}
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <p><i class="far fa-check-circle"></i> {{ message }}</p>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+</body>
+
+{% if not has_data %}
+    <p><i class="fas fa-info-circle"></i> Vous n'avez pas encore ajouté de données.</p>
+{% else %}
+<table>
+    <tr>
+        {% for col in column_names %}
+        <th>{{col}}</th>
+        {% endfor %}
+    </tr>
+    {% for row in row_data %}
+    <tr>
+        {% for col, row_ in zip(column_names, row) %}
+
+            {% if col == link_delete %}
+            <td>
+                <form action="{{url_for('delete_performance', user_id=current_user.id, performance_id=row[0])}}" method="post">
+                    <input type="submit" name="delete" value={{row_}}>
+                </form>
+            </td>
+
+            {% elif col == link_edit %}
+            <td>
+                <form action="{{url_for('edit_performance', user_id=current_user.id, performance_id=row[0])}}" method="post">
+                        <input type="submit" name="edit" value={{row_}}>
+                </form>
+            </td>
+
+            {% else %}
+            <td>
+                {{row_}}
+            </td>
+            {% endif %}
+        {% endfor %}
+    </tr>
+    {% endfor %}
+
+</table>
+{% endif %}
+
+</html>

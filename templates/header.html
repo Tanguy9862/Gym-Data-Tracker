@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Gym Data Tracker</title>
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+
+</head>
+<body>
+{% if is_logged %}
+<a href="{{url_for('dashboard')}}">
+    <img src="https://avatars.dicebear.com/api/miniavs/{{current_user.username}}.svg?b=%2333276d&r=50&size=100&scale=92" style="float:left; margin-right: 15px; margin-bottom: 10px;">
+</a>
+<h1>{{title_content}}</h1>
+<a href="{{url_for('dashboard')}}">Tableau de bord</a>
+<a href="{{url_for('add_new_exercise', user_id=current_user.id)}}">Tracker un nouvel exercice</a>
+<a href="{{url_for('show_workout', user_id=current_user.id)}}">Ajouter une nouvelle performance</a>
+<a href="{{url_for('search_user')}}">Rechercher un utilisateur</a>
+<a href="{{url_for('logout')}}">Se déconnecter</a>
+<br>
+<br>
+<hr>
+{% endif %}
