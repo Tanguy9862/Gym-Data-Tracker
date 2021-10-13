@@ -1,3 +1,4 @@
+node_modules
 
 # Created by https://www.toptal.com/developers/gitignore/api/flask
 # Edit at https://www.toptal.com/developers/gitignore?templates=flask
@@ -145,9 +146,5 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
-
-#node_modules
-
-node_modules
 
 # End of https://www.toptal.com/developers/gitignore/api/flask
