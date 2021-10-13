@@ -1,0 +1,25 @@
+{
+  "name": "gym-data-tracker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.py",
+  "dependencies": {},
+  "devDependencies": {
+    "autoprefixer": "^10.3.7",
+    "postcss": "^8.3.9",
+    "tailwindcss": "^2.2.16"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benouioui/Gym-Data-Tracker.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/benouioui/Gym-Data-Tracker/issues"
+  },
+  "homepage": "https://github.com/benouioui/Gym-Data-Tracker#readme"
+}
