@@ -1,15 +1,30 @@
 {% include "header.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 
-<body>
-{% with messages = get_flashed_messages() %}
-    {% if messages %}
-        {% for message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
-{{ wtf.quick_form(form, novalidate=True, button_map={"submit": "primary"}) }}
-<a href="{{url_for('register')}}">S'inscrire</a>
+<body class="w-full h-screen bg-blue-700">
+    <div class="w-full h-full flex justify-center py-24">
+        <div class="w-2/3">
+            <div class="px-16">
+                <p class="text-6xl text-white font-bold">GymData<span class="text-red-300">Tracker</span></p>
+            </div>
+            <div></div>
+        </div>
+        <div class="w-1/3 flex justify-center ">
+            <div class="bg-blue-800 rounded-xl shadow-xl p-12">
+                <div class="w-full flex justify-center">
+                    {% include "./svg/icons/loginIcon.html" %}
+                </div>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <p>{{ message }}</p>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "primary"}) }}
+                <a href="{{url_for('register')}}">S'inscrire</a>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
