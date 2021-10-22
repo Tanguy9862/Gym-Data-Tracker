@@ -30,6 +30,7 @@ module.exports = {
       white: "#FFF",
       blue: {
         700: "#182952",
+        750: "#1B2F5F",
         800: "#132040"
       },
       purple: {
