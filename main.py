@@ -14,6 +14,12 @@ import requests
 from DataframeManager import DataframeManager
 from form import LoginForm, RegisterForm, AddExercise, EditWorkout, SearchUser
 
+import plotly
+import plotly.express as px
+import plotly.graph_objs as go
+import numpy as np
+import json
+
 
 app = Flask(__name__)
 app.secret_key = "GRHGRTHJJ2349qGFHHTHcdfseghGRYHJ9898897MLPKLqX"
@@ -97,20 +103,24 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
     else:
-        form = LoginForm()
-        if form.validate_on_submit():
-            get_username = User.query.filter_by(username=form.username.data).first()
-            if get_username:
-                if check_password_hash(pwhash=get_username.password, password=form.password.data):
-                    login_user(get_username)
-                    return redirect(url_for("dashboard"))
+        if request.method == "POST":
+            username = request.form['username']
+            password = request.form['password']
+            if len(username) and len(password) != 0:
+                get_username = User.query.filter_by(username=username).first()
+                if get_username:
+                    if check_password_hash(pwhash=get_username.password, password=password):
+                        login_user(get_username)
+                        return redirect(url_for("dashboard"))
+                    else:
+                        flash("Mot de passe incorrect")
+                        return redirect(url_for("login"))
                 else:
-                    flash("Mot de passe incorrect")
-                    return redirect(url_for("login"))
+                    flash("Pseudonyme incorrect")
+                    return redirect(url_for('login'))
             else:
-                flash("Pseudonyme incorrect")
-                return redirect(url_for('login'))
-        return render_template("login.html", form=form, is_logged=current_user.is_authenticated)
+                flash("Veuillez remplir les champs vides")
+        return render_template("login.html", is_logged=current_user.is_authenticated)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -248,17 +258,27 @@ def edit_workout(user_id, exercise_id):
     # print(exercise)
     form = EditWorkout()
     if form.validate_on_submit():
+        def is_rpe_null(data):
+            """
+            Checking if the RPE is null, in this case RPE column would be empty, otherwise RPE will be
+            taken into account
+            """
+            if data == 0:
+                data = ""
+                return data
+            else:
+                return data
         new_performance = ExercisePerformance(
             date_performance=form.date_field.data,
             exercise_performance_user=current_user,
             exercise=exercise,
             global_performance=form.global_performance.data,
             three_reps=form.three_reps.data,
-            three_rpe=form.three_rpe.data,
+            three_rpe=is_rpe_null(form.three_rpe.data),
             two_reps=form.two_reps.data,
-            two_rpe=form.two_rpe.data,
+            two_rpe=is_rpe_null(form.two_rpe.data),
             one_reps=form.one_reps.data,
-            one_rpe=form.one_rpe.data,
+            one_rpe=is_rpe_null(form.one_rpe.data),
             ten_reps=form.ten_reps.data,
             fifteen_reps=form.fifteen_reps.data,
             twenty_reps=form.twenty_reps.data,
@@ -363,6 +383,44 @@ def delete_workout(user_id, exercise_id):
     flash("L'exercice a correctement été supprimé.")
 
     return redirect(url_for('dashboard'))
+
+
+@app.route('/show_plot')
+@login_required
+def show_plot():
+    # Get all specific exercises DF :
+    dataframe_manager = DataframeManager()
+
+    get_unique_exercise = Exercise.query.filter_by(user_id=current_user.id).all()
+    unique_exercise = []
+    for exercise in get_unique_exercise:
+        unique_exercise.append(exercise.exercise_name)
+
+    all_specific_exercises_df = []
+    for _exercise in unique_exercise:
+        current_exercise = Exercise.query.filter_by(user_id=current_user.id, exercise_name=_exercise).first()
+        current_performances = ExercisePerformance.query.filter_by(user_id=current_user.id,
+                                                                   exercise_id=current_exercise.id).all()
+
+        new_df = dataframe_manager.create_specific_dataframe(table=Exercise,
+                                                             exercise_id=current_exercise.id).sort_values(by="Date",
+                                                                                                          ascending=
+                                                                                                          False)
+        all_specific_exercises_df.append(new_df)
+
+    df_test = all_specific_exercises_df[0]
+    print(df_test['x3@RPE'])
+    df_test['x3@RPE'] = df_test['x3@RPE'].str.split(pat="@")
+    print(df_test['x3@RPE'])
+    print(df_test['x3@RPE'][0])
+
+    fig = px.scatter(all_specific_exercises_df[0], x='Date', y='x3@RPE')
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+    return render_template("plot.html",
+                           is_logged=current_user.is_authenticated,
+                           title_content="Visualisation par le biais de graphiques",
+                           graphJSON=graphJSON)
 
 
 @app.route('/search', methods=['POST', 'GET'])
