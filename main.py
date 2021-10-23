@@ -385,51 +385,83 @@ def delete_workout(user_id, exercise_id):
     return redirect(url_for('dashboard'))
 
 
-@app.route('/show_plot')
+@app.route('/show_plot/<int:user_id>')
 @login_required
-def show_plot():
+def show_plot(user_id):
 
     get_all_exercises = Exercise.query.filter_by(user_id=current_user.id).all()
 
-    # Working with exercise_id '3'
-    all_performances_current_exercise = ExercisePerformance.query.filter_by(exercise_id=get_all_exercises[0].id).all()
-    print(all_performances_current_exercise)
+    def get_all_performances_by_id(exercise_id, user_id):
+        # Working with exercise_id '3'
+        try:
+            all_performances_current_exercise = ExercisePerformance.query.filter_by(
+                exercise_id=exercise_id, user_id=user_id).all()
+        except IndexError:
+            return False
+        else:
+            return all_performances_current_exercise
 
-    # Create a DataFrame
-    df_exercise = pd.DataFrame(columns=['Date', 'Charge', 'Répétitions'])
+    def generate_dataframe(all_performances_current_exercise):
 
-    # Add data to the df_exercise DataFrame
-    for performance in all_performances_current_exercise:
-        if performance.three_reps != "":
-            df_exercise = df_exercise.append({'Date': performance.date_performance,
-                                              'Charge': performance.three_reps,
-                                              'Répétitions': '3'}, ignore_index=True)
-        if performance.two_reps != "":
-            df_exercise = df_exercise.append({'Date': performance.date_performance,
-                                              'Charge': performance.two_reps,
-                                              'Répétitions': '2'}, ignore_index=True)
-        if performance.one_reps != "":
-            df_exercise = df_exercise.append({'Date': performance.date_performance,
-                                              'Charge': performance.one_reps,
-                                              'Répétitions': '1'}, ignore_index=True)
+        print(all_performances_current_exercise)
 
-    # Convert columns to respected dtypes
-    df_exercise['Date'] = pd.to_datetime(arg=df_exercise['Date'], format='%Y/%m/%d')
-    df_exercise['Charge'] = pd.to_numeric(arg=df_exercise['Charge'])
-    df_exercise['Répétitions'] = pd.to_numeric(arg=df_exercise['Répétitions'])
+        # Create a DataFrame
+        df_exercise = pd.DataFrame(columns=['Date', 'Charge', 'Répétitions'])
 
-    print(df_exercise.dtypes)
-    print(df_exercise)
+        # Add data to the df_exercise DataFrame
+        for performance in all_performances_current_exercise:
+            if performance.three_reps != "":
+                df_exercise = df_exercise.append({'Date': performance.date_performance,
+                                                  'Charge': performance.three_reps,
+                                                  'Répétitions': 3}, ignore_index=True)
+            if performance.two_reps != "":
+                df_exercise = df_exercise.append({'Date': performance.date_performance,
+                                                  'Charge': performance.two_reps,
+                                                  'Répétitions': 2}, ignore_index=True)
+            if performance.one_reps != "":
+                df_exercise = df_exercise.append({'Date': performance.date_performance,
+                                                  'Charge': performance.one_reps,
+                                                  'Répétitions': 1}, ignore_index=True)
+        return df_exercise
 
-    df_exercise = df_exercise.sort_values(by='Date', ascending=False) # à modifier
-    fig = px.line(df_exercise, x='Date', y='Charge', color='Répétitions', markers=True,
-                  width=900,
-                  height=500)
-    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    def line_plot(df_exercise, title):
+        # Convert columns to respected dtypes
+        df_exercise['Date'] = pd.to_datetime(arg=df_exercise['Date'], format='%Y/%m/%d')
+        df_exercise['Charge'] = pd.to_numeric(arg=df_exercise['Charge'])
+        df_exercise['Répétitions'] = pd.to_numeric(arg=df_exercise['Répétitions'])
+
+        print(df_exercise.dtypes)
+        print(df_exercise)
+
+        df_exercise = df_exercise.sort_values(by='Date', ascending=False)  # à modifier
+        fig = px.line(
+            df_exercise,
+            x='Date',
+            y='Charge',
+            color='Répétitions',
+            markers=True,
+            width=900,
+            height=500
+        )
+        fig.update_layout(
+            title=title,
+            yaxis_title="Charge (en Kg)",
+        )
+        return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+    if not get_all_performances_by_id(exercise_id=3, user_id=current_user.id):
+        flash("Vous n'avez pas encore enregistré suffisamment de données pour visualer ce graphique")
+        graphJSON = ""
+        has_data = False
+    else:
+        df_exercise = generate_dataframe(all_performances_current_exercise=get_all_performances_by_id(3, current_user.id))
+        graphJSON = line_plot(df_exercise, title=f"{Exercise.query.filter_by(id=3).first().exercise_name} - axé Force")
+        has_data = True
 
     return render_template("plot.html",
                            is_logged=current_user.is_authenticated,
                            title_content="Visualisation par le biais de graphiques",
+                           has_data=has_data,
                            graphJSON=graphJSON)
 
 
