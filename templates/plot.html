@@ -1,6 +1,7 @@
 {% include "header.html" %}
-<div id="chart"></div>
+
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<div id="chart" style="margin-top:50px;"></div>
 <script type='text/javascript'>
   var graphs = {{graphJSON | safe}};
   Plotly.plot('chart',graphs,{});
