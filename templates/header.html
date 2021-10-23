@@ -8,7 +8,6 @@
     <title>Gym Data Tracker</title>
     <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
     <link rel="stylesheet" href="../static/css/main.css"/>
-
 </head>
 <body>
 {% if is_logged %}
@@ -20,6 +19,7 @@
 <a href="{{url_for('add_new_exercise', user_id=current_user.id)}}">Tracker un nouvel exercice</a>
 <a href="{{url_for('show_workout', user_id=current_user.id)}}">Ajouter une nouvelle performance</a>
 <a href="{{url_for('search_user')}}">Rechercher un utilisateur</a>
+<a href="{{url_for('show_plot')}}">Graphique</a>
 <a href="{{url_for('logout')}}">Se déconnecter</a>
 <br>
 <br>
