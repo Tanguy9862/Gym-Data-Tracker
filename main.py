@@ -388,33 +388,43 @@ def delete_workout(user_id, exercise_id):
 @app.route('/show_plot')
 @login_required
 def show_plot():
-    # Get all specific exercises DF :
-    dataframe_manager = DataframeManager()
 
-    get_unique_exercise = Exercise.query.filter_by(user_id=current_user.id).all()
-    unique_exercise = []
-    for exercise in get_unique_exercise:
-        unique_exercise.append(exercise.exercise_name)
+    get_all_exercises = Exercise.query.filter_by(user_id=current_user.id).all()
 
-    all_specific_exercises_df = []
-    for _exercise in unique_exercise:
-        current_exercise = Exercise.query.filter_by(user_id=current_user.id, exercise_name=_exercise).first()
-        current_performances = ExercisePerformance.query.filter_by(user_id=current_user.id,
-                                                                   exercise_id=current_exercise.id).all()
+    # Working with exercise_id '3'
+    all_performances_current_exercise = ExercisePerformance.query.filter_by(exercise_id=get_all_exercises[0].id).all()
+    print(all_performances_current_exercise)
 
-        new_df = dataframe_manager.create_specific_dataframe(table=Exercise,
-                                                             exercise_id=current_exercise.id).sort_values(by="Date",
-                                                                                                          ascending=
-                                                                                                          False)
-        all_specific_exercises_df.append(new_df)
+    # Create a DataFrame
+    df_exercise = pd.DataFrame(columns=['Date', 'Charge', 'Répétitions'])
 
-    df_test = all_specific_exercises_df[0]
-    print(df_test['x3@RPE'])
-    df_test['x3@RPE'] = df_test['x3@RPE'].str.split(pat="@")
-    print(df_test['x3@RPE'])
-    print(df_test['x3@RPE'][0])
+    # Add data to the df_exercise DataFrame
+    for performance in all_performances_current_exercise:
+        if performance.three_reps != "":
+            df_exercise = df_exercise.append({'Date': performance.date_performance,
+                                              'Charge': performance.three_reps,
+                                              'Répétitions': '3'}, ignore_index=True)
+        if performance.two_reps != "":
+            df_exercise = df_exercise.append({'Date': performance.date_performance,
+                                              'Charge': performance.two_reps,
+                                              'Répétitions': '2'}, ignore_index=True)
+        if performance.one_reps != "":
+            df_exercise = df_exercise.append({'Date': performance.date_performance,
+                                              'Charge': performance.one_reps,
+                                              'Répétitions': '1'}, ignore_index=True)
 
-    fig = px.scatter(all_specific_exercises_df[0], x='Date', y='x3@RPE')
+    # Convert columns to respected dtypes
+    df_exercise['Date'] = pd.to_datetime(arg=df_exercise['Date'], format='%Y/%m/%d')
+    df_exercise['Charge'] = pd.to_numeric(arg=df_exercise['Charge'])
+    df_exercise['Répétitions'] = pd.to_numeric(arg=df_exercise['Répétitions'])
+
+    print(df_exercise.dtypes)
+    print(df_exercise)
+
+    df_exercise = df_exercise.sort_values(by='Date', ascending=False) # à modifier
+    fig = px.line(df_exercise, x='Date', y='Charge', color='Répétitions', markers=True,
+                  width=900,
+                  height=500)
     graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
     return render_template("plot.html",
