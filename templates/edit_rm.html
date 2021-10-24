@@ -1,0 +1,17 @@
+{% include "header.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% if has_bw_data %}
+    {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "primary"}) }}
+{% else %}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <p><i class="far fa-info-circle"></i> {{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+{% endif %}
+
+</body>
+</html>
