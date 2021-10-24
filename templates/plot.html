@@ -2,12 +2,22 @@
 
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
-{% if has_data %}
+{% if has_strength_data %}
 
-    <div id="chart" style="margin-top:50px;"></div>
+    <div id="chart_1" style="margin-top:50px;"></div>
     <script type='text/javascript'>
-      var graphs = {{graphJSON | safe}};
-      Plotly.plot('chart',graphs,{});
+      var graphs = {{graphJSON_1 | safe}};
+      Plotly.plot('chart_1',graphs,{});
+    </script>
+
+{% endif %}
+
+{% if has_endurance_data %}
+
+    <div id="chart_2" style="margin-top:50px;"></div>
+    <script type='text/javascript'>
+      var graphs = {{graphJSON_2 | safe}};
+      Plotly.plot('chart_2',graphs,{});
     </script>
 
 {% else %}
