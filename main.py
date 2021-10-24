@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import pandas as pd
 from flask import Flask, render_template, redirect, url_for, flash, request, abort
 from flask import render_template
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
@@ -12,7 +12,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import requests
 from DataframeManager import DataframeManager
 from PlotData import Plot
-from form import LoginForm, RegisterForm, AddExercise, EditWorkout, SearchUser
+from form import LoginForm, RegisterForm, AddExercise, EditWorkout, SearchUser, AddPersonalRecord, EditBodyWeight
+from datetime import datetime
+
 
 
 app = Flask(__name__)
@@ -37,6 +39,7 @@ dataframe_manager = DataframeManager()
 # CREATE PLOT OBJECT
 plot_function = Plot()
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(user_id)
@@ -48,12 +51,16 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(50), nullable=False, unique=True)
     username = db.Column(db.String(20), nullable=False)
     password = db.Column(db.String(20), nullable=False)
+    sex = db.Column(db.String(15), nullable=False)
 
-    # Relation with Exercise table :
+    # Relation with Exercise table:
     exercises = relationship("Exercise", back_populates="author")
 
-    # Relation with ExercisePerformance table :
+    # Relation with ExercisePerformance table:
     performances = relationship("ExercisePerformance", back_populates="exercise_performance_user")
+
+    # Relation with Wilks table:
+    wilks = relationship("Wilks", back_populates="wilks_user")
 
 
 class Exercise(db.Model):
@@ -80,7 +87,7 @@ class ExercisePerformance(db.Model):
     exercise_id = db.Column(db.Integer, db.ForeignKey("exercise_details.id"))
     exercise = relationship("Exercise", back_populates="performance")
 
-    date_performance = db.Column(db.String(20), nullable=True)
+    date_performance = db.Column(db.String(20), nullable=False)
     global_performance = db.Column(db.String(30), nullable=False)
 
     three_reps = db.Column(db.Integer, nullable=True)
@@ -92,6 +99,23 @@ class ExercisePerformance(db.Model):
     ten_reps = db.Column(db.Integer, nullable=True)
     fifteen_reps = db.Column(db.Integer, nullable=True)
     twenty_reps = db.Column(db.Integer, nullable=True)
+
+
+class Wilks(db.Model):
+    __tablename__ = "wilks_details"
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+
+    # Relation with User table:
+    user_id = db.Column(db.Integer, db.ForeignKey("user_info.id"))
+    wilks_user = relationship("User", back_populates="wilks")
+
+    # Wilks Data:
+    date = db.Column(db.String(20), nullable=False)
+    max_bench = db.Column(db.Float, nullable=True)
+    max_squat = db.Column(db.Float, nullable=True)
+    max_deadlift = db.Column(db.Float, nullable=True)
+    bodyweight = db.Column(db.Float, nullable=True)
+    wilks = db.Column(db.Float, nullable=True)
 
 
 db.create_all()
@@ -141,10 +165,17 @@ def register():
                     method='pbkdf2:sha256',
                     salt_length=8
                 )
+
+                if form.sex.data == "Masculin":
+                    form.sex.data = "Male"
+                else:
+                    form.sex.data = "Female"
+
                 new_user = User(
                     email=form.email.data,
                     username=form.username.data,
-                    password=hash_and_salted_password
+                    password=hash_and_salted_password,
+                    sex=form.sex.data
                 )
                 db.session.add(new_user)
                 db.session.commit()
@@ -505,6 +536,100 @@ def wilks(user_id):
     return render_template('wilks.html',
                            is_logged=current_user.is_authenticated,
                            title_content="Détails relatifs à vos coefficients WILKS")
+
+
+@app.route('/track_rm/<int:user_id>')
+@login_required
+def track_rm(user_id):
+    return render_template('rm.html',
+                           is_logged=current_user.is_authenticated,
+                           title_content="Mettre à ses jours ses records personnels")
+
+
+@app.route('/edit_rm/<int:user_id>/<exercise_name>', methods=['POST', 'GET'])
+@login_required
+def edit_rm(user_id, exercise_name):
+    get_bw_data = Wilks.query.filter_by(user_id=current_user.id).all()
+    has_bw_data = False
+
+    for bw in get_bw_data:
+        if bw.bodyweight != None:
+            has_bw_data = True
+            break
+
+    if not has_bw_data:
+        flash("Pour ajouter vos records personnels, vous devez d'abord renseigner votre poids du corps dans vos paramètres.")
+        return render_template('edit_rm.html',
+                               is_logged=current_user.is_authenticated,
+                               has_bw_data=False,
+                               title_content=f"Ajout d'un nouveau record personnel pour le {exercise_name}")
+    else:
+        form = AddPersonalRecord()
+        if form.validate_on_submit():
+            body_user = Wilks.query.filter_by(user_id=current_user.id).all()
+
+            date_model = datetime.strptime('1900-01-01', '%Y-%m-%d')
+            last_bw = None
+
+            # Get the last saved weight:
+            for wilks in body_user:
+                if wilks.bodyweight != None:
+                    if datetime.strptime(f'{wilks.date}', '%Y-%m-%d') > date_model:
+                        last_bw = wilks.bodyweight
+                        date_model = datetime.strptime(f'{wilks.date}', '%Y-%m-%d')
+            print(last_bw)
+
+            if exercise_name == "Bench Press":
+                new_pr = Wilks(
+                    date=form.date_record.data,
+                    max_bench=form.input_record.data,
+                    bodyweight=last_bw,
+                    wilks_user=current_user
+                )
+            elif exercise_name == "Squat":
+                new_pr = Wilks(
+                    date=form.date_record.data,
+                    max_squat=form.input_record.data,
+                    bodyweight=last_bw,
+                    wilks_user=current_user
+                )
+            elif exercise_name == "Deadlift":
+                new_pr = Wilks(
+                    date=form.date_record.data,
+                    max_deadlift=form.input_record.data,
+                    bodyweight=last_bw,
+                    wilks_user=current_user
+                )
+            db.session.add(new_pr)
+            db.session.commit()
+            flash("Le nouveau record a été enregistré avec succès.")
+            return redirect(url_for('track_rm', user_id=current_user.id))
+
+        return render_template('edit_rm.html',
+                               is_logged=current_user.is_authenticated,
+                               form=form,
+                               has_bw_data=True,
+                               title_content=f"Ajout d'un nouveau record personnel pour le {exercise_name}")
+
+
+@app.route('/settings/<int:user_id>', methods=['POST', 'GET'])
+@login_required
+def settings(user_id):
+    form = EditBodyWeight()
+    if form.validate_on_submit():
+        new_bw = Wilks(
+            date=form.date_bw.data,
+            bodyweight=form.input_bw.data,
+            wilks_user=current_user
+        )
+        db.session.add(new_bw)
+        db.session.commit()
+        flash("Votre nouveau poids de corps a été enregistré.")
+        return redirect(url_for('settings', user_id=current_user.id))
+    return render_template('settings.html',
+                           form=form,
+                           is_logged=current_user.is_authenticated,
+                           title_content="Modification de vos paramètres")
 
 
 if __name__ == "__main__":
