@@ -24,7 +24,9 @@
 
     {% for table in specific_tables %}
         {% if table|length > 345 %}
-            <h3>{{specific_titles[loop.index - 1]}} :</h3>
+            <h3>
+                {{specific_titles[loop.index - 1]}} - <a href="{{url_for('show_plot', user_id=current_user.id, exercise_id=specific_id[loop.index - 1])}}">Graphique</a>
+            </h3>
             {{ table|safe }}
         {% endif %}
     {% endfor %}
