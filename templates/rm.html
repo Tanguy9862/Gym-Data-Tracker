@@ -1,0 +1,18 @@
+{% include "header.html" %}
+<br><br>
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <p><i class="far fa-check-circle"></i> {{ message }}</p>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+<h3>Chosissez un exercice</h3>
+<ul>
+  <li><a href="{{url_for('edit_rm', user_id=current_user.id, exercise_name='Squat')}}">Squat</a></li>
+  <li><a href="{{url_for('edit_rm', user_id=current_user.id, exercise_name='Bench Press')}}">Bench Press</a></li>
+  <li><a href="{{url_for('edit_rm', user_id=current_user.id, exercise_name='Deadlift')}}">Deadlift</a></li>
+</ul>
+
+</body>
+</html>
