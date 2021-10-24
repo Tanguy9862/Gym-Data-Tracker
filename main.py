@@ -9,16 +9,10 @@ from sqlalchemy import Table, Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from werkzeug.security import generate_password_hash, check_password_hash
-import pandas as pd
 import requests
 from DataframeManager import DataframeManager
+from PlotData import Plot
 from form import LoginForm, RegisterForm, AddExercise, EditWorkout, SearchUser
-
-import plotly
-import plotly.express as px
-import plotly.graph_objs as go
-import numpy as np
-import json
 
 
 app = Flask(__name__)
@@ -37,6 +31,11 @@ Base = declarative_base()
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+# CREATE DATAFRAME MANAGER OBJECT
+dataframe_manager = DataframeManager()
+
+# CREATE PLOT OBJECT
+plot_function = Plot()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -165,7 +164,6 @@ def logout():
 @login_required
 def dashboard():
     # Create a global performance DataFrame :
-    dataframe_manager = DataframeManager()
     df_exercise_performance = dataframe_manager.create_global_dataframe(table=ExercisePerformance,
                                                                         user_id=current_user.id)
     df_exercise_performance = df_exercise_performance.sort_values(by="Date", ascending=False)[:15]
@@ -196,6 +194,7 @@ def dashboard():
     # Get all exercises names from Database :
     get_all_exercises = Exercise.query.filter_by(user_id=current_user.id).all()
     all_exercises_names = [exercise.exercise_name.title() for exercise in get_all_exercises]
+    all_exercises_id = [exercise.id for exercise in get_all_exercises]
 
     if len(df_exercise_performance) == 0:
         has_data = False
@@ -215,6 +214,7 @@ def dashboard():
                            global_performance_title="Vos 15 dernières performances globales :",
                            specific_tables=[df.to_html(classes='data', index=False) for df in all_specific_exercises_df],
                            specific_titles=all_exercises_names,
+                           specific_id=all_exercises_id,
                            has_data=has_data,
                            title_content=title_content)
 
@@ -294,8 +294,7 @@ def edit_workout(user_id, exercise_id):
 @app.route('/advanced-edit/<int:user_id>/<int:exercise_id>')
 @login_required
 def advanced_edit(user_id, exercise_id):
-    dataframe_manger = DataframeManager()
-    exercise_df = dataframe_manger.create_specific_dataframe(table=Exercise, exercise_id=exercise_id)
+    exercise_df = dataframe_manager.create_specific_dataframe(table=Exercise, exercise_id=exercise_id)
     exercise_df['Editer'] = "Editer"
     exercise_df['Delete'] = "Supprimer"
     if len(exercise_df) == 0:
@@ -309,10 +308,10 @@ def advanced_edit(user_id, exercise_id):
                            link_delete="Delete",
                            link_edit="Editer",
                            zip=zip,
-                           exercise=dataframe_manger.exercise,
+                           exercise=dataframe_manager.exercise,
                            tables=[exercise_df.to_html(classes='data', index=True)],
                            has_data=has_data,
-                           title_content=f"{dataframe_manger.exercise.exercise_name} : Modification d'une performance")
+                           title_content=f"{dataframe_manager.exercise.exercise_name} : Modification d'une performance")
 
 
 @app.route('/delete_performance/<int:user_id>/<int:performance_id>', methods=['POST', 'GET'])
@@ -385,11 +384,12 @@ def delete_workout(user_id, exercise_id):
     return redirect(url_for('dashboard'))
 
 
-@app.route('/show_plot/<int:user_id>')
+@app.route('/show_plot/<int:user_id>/<int:exercise_id>')
 @login_required
-def show_plot(user_id):
+def show_plot(user_id, exercise_id):
 
     get_all_exercises = Exercise.query.filter_by(user_id=current_user.id).all()
+    print(exercise_id)
 
     def get_all_performances_by_id(exercise_id, user_id):
         # Working with exercise_id '3'
@@ -401,68 +401,56 @@ def show_plot(user_id):
         else:
             return all_performances_current_exercise
 
-    def generate_dataframe(all_performances_current_exercise):
+    performance_exercise = get_all_performances_by_id(exercise_id=exercise_id, user_id=current_user.id)
+    print(performance_exercise)
+    if not performance_exercise:
+        flash("Vous n'avez pas encore enregistré suffisamment de données pour visualer les graphiques.")
+        graphJSON_1 = None
+        graphJSON_2 = None
+        has_strength_data = False
+        has_endurance_data = False
 
-        print(all_performances_current_exercise)
-
-        # Create a DataFrame
-        df_exercise = pd.DataFrame(columns=['Date', 'Charge', 'Répétitions'])
-
-        # Add data to the df_exercise DataFrame
-        for performance in all_performances_current_exercise:
-            if performance.three_reps != "":
-                df_exercise = df_exercise.append({'Date': performance.date_performance,
-                                                  'Charge': performance.three_reps,
-                                                  'Répétitions': 3}, ignore_index=True)
-            if performance.two_reps != "":
-                df_exercise = df_exercise.append({'Date': performance.date_performance,
-                                                  'Charge': performance.two_reps,
-                                                  'Répétitions': 2}, ignore_index=True)
-            if performance.one_reps != "":
-                df_exercise = df_exercise.append({'Date': performance.date_performance,
-                                                  'Charge': performance.one_reps,
-                                                  'Répétitions': 1}, ignore_index=True)
-        return df_exercise
-
-    def line_plot(df_exercise, title):
-        # Convert columns to respected dtypes
-        df_exercise['Date'] = pd.to_datetime(arg=df_exercise['Date'], format='%Y/%m/%d')
-        df_exercise['Charge'] = pd.to_numeric(arg=df_exercise['Charge'])
-        df_exercise['Répétitions'] = pd.to_numeric(arg=df_exercise['Répétitions'])
-
-        print(df_exercise.dtypes)
-        print(df_exercise)
-
-        df_exercise = df_exercise.sort_values(by='Date', ascending=False)  # à modifier
-        fig = px.line(
-            df_exercise,
-            x='Date',
-            y='Charge',
-            color='Répétitions',
-            markers=True,
-            width=900,
-            height=500
-        )
-        fig.update_layout(
-            title=title,
-            yaxis_title="Charge (en Kg)",
-        )
-        return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-
-    if not get_all_performances_by_id(exercise_id=3, user_id=current_user.id):
-        flash("Vous n'avez pas encore enregistré suffisamment de données pour visualer ce graphique")
-        graphJSON = ""
-        has_data = False
     else:
-        df_exercise = generate_dataframe(all_performances_current_exercise=get_all_performances_by_id(3, current_user.id))
-        graphJSON = line_plot(df_exercise, title=f"{Exercise.query.filter_by(id=3).first().exercise_name} - axé Force")
-        has_data = True
+        print(get_all_performances_by_id(exercise_id, current_user.id))
+
+        # Strength data:
+        df_exercise = dataframe_manager.generate_strength_df_for_plot(
+            all_performances_current_exercise=get_all_performances_by_id(exercise_id, current_user.id)
+        )
+
+        try:
+            st_row = df_exercise['Charge'][0]
+        except IndexError:
+            flash("Vous n'avez pas encore enregistré suffisamment de données pour visualiser le graphique axé Force.")
+            graphJSON_1 = None
+            has_strength_data = False
+        else:
+            graphJSON_1 = plot_function.line_plot(df_exercise, title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Force")
+            has_strength_data = True
+
+        # Endurance data:
+        df_exercise = dataframe_manager.generate_endurance_df_for_plot(
+            all_performances_current_exercise=get_all_performances_by_id(exercise_id, current_user.id)
+        )
+
+        try:
+            st_row = df_exercise['Charge'][0]
+        except IndexError:
+            flash("Vous n'avez pas encore enregistré suffisamment de données pour visualiser le graphique axé Endurance.")
+            graphJSON_2 = None
+            has_endurance_data = False
+        else:
+            graphJSON_2 = plot_function.line_plot(df_exercise,
+                                                           title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Endurance")
+            has_endurance_data = True
 
     return render_template("plot.html",
                            is_logged=current_user.is_authenticated,
                            title_content="Visualisation par le biais de graphiques",
-                           has_data=has_data,
-                           graphJSON=graphJSON)
+                           has_strength_data=has_strength_data,
+                           graphJSON_1=graphJSON_1,
+                           has_endurance_data=has_endurance_data,
+                           graphJSON_2=graphJSON_2)
 
 
 @app.route('/search', methods=['POST', 'GET'])
@@ -487,7 +475,6 @@ def search_user():
 def show_user(username):
     get_user_info = User.query.filter_by(username=username).first()
     get_user_performance = ExercisePerformance.query.filter_by(user_id=get_user_info.id).all()
-    dataframe_manager = DataframeManager()
     df_exercise_performance = dataframe_manager.create_global_dataframe(table=ExercisePerformance,
                                                                         user_id=get_user_info.id).sort_values(
         by="Date",
@@ -510,6 +497,14 @@ def show_user(username):
                            global_performance_tables=[df_exercise_performance.to_html(classes='data', index=False)],
                            global_performance_title=f"Les 15 dernières performances globales ajoutées par {get_user_info.username} :",
                            )
+
+
+@app.route('/wilks/<int:user_id>')
+@login_required
+def wilks(user_id):
+    return render_template('wilks.html',
+                           is_logged=current_user.is_authenticated,
+                           title_content="Détails relatifs à vos coefficients WILKS")
 
 
 if __name__ == "__main__":
