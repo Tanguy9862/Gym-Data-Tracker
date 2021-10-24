@@ -1,0 +1,17 @@
+{% include "header.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+
+<br><br>
+<h3>Modifier son poids de corps (en kg):</h3>
+<p><i class="far fa-info-circle"></i>Ajouter une nouvelle donnée concernant votre poids de corps ne remplacera pas les anciennes données relatives à celui-ci.</p>
+{{ wtf.quick_form(form, novalidate=True, button_map={"submit": "primary"}) }}
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <p><i class="far fa-check-circle"></i> {{ message }}</p>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+</body>
+</html>
