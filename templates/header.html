@@ -19,7 +19,9 @@
 <a href="{{url_for('add_new_exercise', user_id=current_user.id)}}">Tracker un nouvel exercice</a>
 <a href="{{url_for('show_workout', user_id=current_user.id)}}">Ajouter une nouvelle performance</a>
 <a href="{{url_for('search_user')}}">Rechercher un utilisateur</a>
+<a href="{{url_for('track_rm', user_id=current_user.id)}}">Tracker ses RM</a>
 <a href="{{url_for('wilks', user_id=current_user.id)}}">WILKS Détails</a>
+<a href="{{url_for('settings', user_id=current_user.id)}}">Paramètres</a>
 <a href="{{url_for('logout')}}">Se déconnecter</a>
 <br>
 <br>
