@@ -72,3 +72,64 @@ class DataframeManager:
             new_df = new_df.append(new_row, ignore_index=True)
 
         return new_df
+
+    def generate_strength_df_for_plot(self, all_performances_current_exercise):
+
+        print(all_performances_current_exercise)
+
+        # Create a DataFrame
+        df_exercise = pd.DataFrame(columns=['Date', 'Charge', 'Répétitions'])
+
+        # Add data to the df_exercise DataFrame
+        for performance in all_performances_current_exercise:
+            if performance.three_reps != "":
+                df_exercise = df_exercise.append({'Date': performance.date_performance,
+                                                  'Charge': performance.three_reps,
+                                                  'Répétitions': 3}, ignore_index=True)
+            if performance.two_reps != "":
+                df_exercise = df_exercise.append({'Date': performance.date_performance,
+                                                  'Charge': performance.two_reps,
+                                                  'Répétitions': 2}, ignore_index=True)
+            if performance.one_reps != "":
+                df_exercise = df_exercise.append({'Date': performance.date_performance,
+                                                  'Charge': performance.one_reps,
+                                                  'Répétitions': 1}, ignore_index=True)
+
+
+        # Convert columns to respected dtypes
+        df_exercise['Date'] = pd.to_datetime(arg=df_exercise['Date'], format='%Y/%m/%d')
+        df_exercise['Charge'] = pd.to_numeric(arg=df_exercise['Charge'])
+        df_exercise['Répétitions'] = pd.to_numeric(arg=df_exercise['Répétitions'])
+
+        return df_exercise
+
+    def generate_endurance_df_for_plot(self, all_performances_current_exercise):
+
+        print(all_performances_current_exercise)
+
+        # Create a DataFrame
+        df_exercise = pd.DataFrame(columns=['Date', 'Charge', 'Répétitions'])
+
+        # Add data to the df_exercise DataFrame
+        for performance in all_performances_current_exercise:
+            if performance.twenty_reps != "":
+                df_exercise = df_exercise.append({'Date': performance.date_performance,
+                                                  'Charge': performance.twenty_reps,
+                                                  'Répétitions': 20}, ignore_index=True)
+            if performance.fifteen_reps != "":
+                df_exercise = df_exercise.append({'Date': performance.date_performance,
+                                                  'Charge': performance.fifteen_reps,
+                                                  'Répétitions': 15}, ignore_index=True)
+
+            if performance.ten_reps != "":
+                df_exercise = df_exercise.append({'Date': performance.date_performance,
+                                                  'Charge': performance.ten_reps,
+                                                  'Répétitions': 10}, ignore_index=True)
+
+
+        # Convert columns to respected dtypes
+        df_exercise['Date'] = pd.to_datetime(arg=df_exercise['Date'], format='%Y/%m/%d')
+        df_exercise['Charge'] = pd.to_numeric(arg=df_exercise['Charge'])
+        df_exercise['Répétitions'] = pd.to_numeric(arg=df_exercise['Répétitions'])
+
+        return df_exercise
