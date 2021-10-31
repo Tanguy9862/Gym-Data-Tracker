@@ -13,5 +13,40 @@
     {% endwith %}
 {% endif %}
 
+<hr>
+<h2>{{exercise_name}} : Records personnels déjà ajoutés</h2>
+
+{% if not has_pr_data %}
+    <p><i class="far fa-info-circle"></i>Vous n'avez pas encore enregistré de records personnels pour cet exercice.</p>
+{% else %}
+    <table>
+        <tr>
+            {% for col in column_names %}
+            <th>{{col}}</th>
+            {% endfor %}
+        </tr>
+        {% for row in row_data %}
+        <tr>
+            {% for col, row_ in zip(column_names, row) %}
+
+                {% if col == link_delete %}
+                <td>
+                    <form action="{{url_for('delete_pr', user_id=current_user.id, lift_id=lift_id, pr_date=row[0])}}" method="post">
+                        <input type="submit" name="delete" value={{row_}}>
+                    </form>
+                </td>
+
+                {% else %}
+                <td>
+                    {{row_}}
+                </td>
+                {% endif %}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+
+    </table>
+{% endif %}
+
 </body>
 </html>
