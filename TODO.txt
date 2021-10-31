@@ -14,21 +14,21 @@
 		-> Route WILKS OK
 		-> Prise en compte du genre lors de l'inscription OK
 		-> Page paramètres pour enregistrer son BW OK
-			-> Etre capable de sortir le plus récent BW enregistré valable
-			   pour -> [l'associer aux nouveaux PR enregistrés] OK
-				-> Empêcher le fait d'ajouter des PR si on n'a jamais enregistré
-			           son BW OK
+			-> Etre capable de sortir le plus récent BW enregistré valable pour l'associer aux nouveaux PR enregistrés] OK
+				-> Empêcher le fait d'ajouter des PR si on n'a jamais enregistré son BW OK
 
 		-> Page pour ajouter ses PR MAX 1 rep OK
 		-> Table User : ajouter colonne genre OK
 		-> Table Wilks : colonne user_id + date + max_bench + max_dl 
 				+ max_squat + bw + wilks OK
 
-	- * Page tracker ses PR:
+	- * Page tracker ses PR: OK
 		-> 1 df par exercice avec date + pr OK
-		-> Pourvoir éditer/supprimer ses PR déjà ajoutés
-		-> 1 graphique par df
-		
+		-> Pourvoir supprimer ses PR déjà ajoutés OK
+		-> 1 graphique général regroupant l'évolution des PR des 3 lifts en fn de la date OK
+		-> Ajout dans le graphique : avec en text le BW
+		    	-> https://plotly.com/python/line-and-scatter/ -> 'Connected Scatterplots'
+
 	-  * Page WILKS : 
 		-> DF avec colonne bw/pr squat/pr bench/pr deadlift/total/wilk (le wilk est calculé seulement s'il y a une value dans les 3 lift)
 		-> Graphique RM/mouvement (du genre histogramme 3 barres, 1 par lift, abs=date/ord=charge/barre=lift)
@@ -45,6 +45,7 @@
 
 - Add performance : prévoir l'erreur quand on ajoute un ',' ou un ';' à la place d'un point
 pour un nombre flottant -> erreur quand on affichera la page graphique
+    -> Ne pas oublier de convertir les données en pd.to_numeric()
 
 - Alléger le code :
 	- Route show_plot (faire une fonction pour le try/except car il n'y a que la fonction
@@ -52,3 +53,5 @@ pour un nombre flottant -> erreur quand on affichera la page graphique
 
 - Fichier __init__, regrouper les routes semblables par groupe dans un même fichier python
 	- c.f favoris
+
+- Pouvoir modifier le RPE
