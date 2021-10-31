@@ -111,6 +111,7 @@ class Wilks(db.Model):
 
     # Wilks Data:
     date = db.Column(db.String(20), nullable=False)
+    lift_id = db.Column(db.Integer, nullable=True)
     max_bench = db.Column(db.Float, nullable=True)
     max_squat = db.Column(db.Float, nullable=True)
     max_deadlift = db.Column(db.Float, nullable=True)
@@ -541,9 +542,63 @@ def wilks(user_id):
 @app.route('/track_rm/<int:user_id>')
 @login_required
 def track_rm(user_id):
-    return render_template('rm.html',
-                           is_logged=current_user.is_authenticated,
-                           title_content="Mettre à ses jours ses records personnels")
+
+    def create_rm_df(pr_data, lift_id):
+        """
+
+        :param pr_data: A list of a specific exercise mades on Wilks table
+        :param lift_id: 1 for Squat, 2 for Bench, 3 for Deadlift
+        :return: DataFrame object with columns refers to Date and Charge
+
+        """
+        df_pr = pd.DataFrame(columns=['Date', 'Charge'])
+
+        for pr in pr_data:
+            if lift_id == 1:
+                lift_data = pr.max_squat
+            elif lift_id == 2:
+                lift_data = pr.max_bench
+            elif lift_id == 3:
+                lift_data = pr.max_deadlift
+            else:
+                lift_data = None
+
+            df_pr = df_pr.append({'Date': pr.date,
+                                  'Charge': lift_data}, ignore_index=True)
+
+        return df_pr
+
+    # Get all PRs for each exercise(Squat1, Bench2, Deadlift3):
+    all_squat_pr = Wilks.query.filter_by(user_id=current_user.id, lift_id=1).all()
+    all_bench_pr = Wilks.query.filter_by(user_id=current_user.id, lift_id=2).all()
+    all_deadlift_pr = Wilks.query.filter_by(user_id=current_user.id, lift_id=3).all()
+
+    if len(all_squat_pr) + len(all_bench_pr) + len(all_deadlift_pr) == 0:
+        return render_template('rm.html',
+                               is_logged=current_user.is_authenticated,
+                               has_data=False,
+                               title_content="Mettre à ses jours ses records personnels", )
+    else:
+        # Generate DF for each PR exercise:
+        squat_df = create_rm_df(all_squat_pr, 1)
+        bench_df = create_rm_df(all_bench_pr, 2)
+        deadlift_df = create_rm_df(all_deadlift_pr, 3)
+
+        # Sort values by most recents dates:
+        squat_df = squat_df.sort_values(by="Date", ascending=False)
+        bench_df = bench_df.sort_values(by="Date", ascending=False)
+        deadlift_df = deadlift_df.sort_values(by="Date", ascending=False)
+
+        return render_template('rm.html',
+                               is_logged=current_user.is_authenticated,
+                               title_content="Mettre à ses jours ses records personnels",
+                               squat_performance_tables=[squat_df.to_html(classes='data', index=False)],
+                               squat_performance_title="Vos derniers RM au Squat :",
+                               bench_performance_tables=[bench_df.to_html(classes='data', index=False)],
+                               bench_performance_title="Vos derniers RM au Benchpress :",
+                               deadlift_performance_tables=[deadlift_df.to_html(classes='data', index=False)],
+                               deadlift_performance_title="Vos derniers RM au Deadlift :",
+                               )
 
 
 @app.route('/edit_rm/<int:user_id>/<exercise_name>', methods=['POST', 'GET'])
@@ -582,6 +637,7 @@ def edit_rm(user_id, exercise_name):
             if exercise_name == "Bench Press":
                 new_pr = Wilks(
                     date=form.date_record.data,
+                    lift_id=2,
                     max_bench=form.input_record.data,
                     bodyweight=last_bw,
                     wilks_user=current_user
@@ -589,6 +645,7 @@ def edit_rm(user_id, exercise_name):
             elif exercise_name == "Squat":
                 new_pr = Wilks(
                     date=form.date_record.data,
+                    lift_id=1,
                     max_squat=form.input_record.data,
                     bodyweight=last_bw,
                     wilks_user=current_user
@@ -596,6 +653,7 @@ def edit_rm(user_id, exercise_name):
             elif exercise_name == "Deadlift":
                 new_pr = Wilks(
                     date=form.date_record.data,
+                    lift_id=3,
                     max_deadlift=form.input_record.data,
                     bodyweight=last_bw,
                     wilks_user=current_user
