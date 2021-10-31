@@ -11,6 +11,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from werkzeug.security import generate_password_hash, check_password_hash
 import requests
 from DataframeManager import DataframeManager
+from PRManager import ManagerPR
 from PlotData import Plot
 from form import LoginForm, RegisterForm, AddExercise, EditWorkout, SearchUser, AddPersonalRecord, EditBodyWeight
 from datetime import datetime
@@ -38,6 +39,9 @@ dataframe_manager = DataframeManager()
 
 # CREATE PLOT OBJECT
 plot_function = Plot()
+
+# CREATE PR MANAGER OBJECT
+pr_manager = ManagerPR()
 
 
 @login_manager.user_loader
@@ -333,6 +337,7 @@ def advanced_edit(user_id, exercise_id):
         has_data = False
     else:
         has_data = True
+
     return render_template("advanced_edit.html",
                            is_logged=current_user.is_authenticated,
                            column_names=exercise_df.columns.values,
@@ -457,7 +462,11 @@ def show_plot(user_id, exercise_id):
             graphJSON_1 = None
             has_strength_data = False
         else:
-            graphJSON_1 = plot_function.line_plot(df_exercise, title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Force")
+            graphJSON_1 = plot_function.line_plot(
+                df_exercise,
+                color_column='Répétitions',
+                title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Force"
+            )
             has_strength_data = True
 
         # Endurance data:
@@ -472,8 +481,11 @@ def show_plot(user_id, exercise_id):
             graphJSON_2 = None
             has_endurance_data = False
         else:
-            graphJSON_2 = plot_function.line_plot(df_exercise,
-                                                           title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Endurance")
+            graphJSON_2 = plot_function.line_plot(
+                df_exercise,
+                color_column='Répétitions',
+                title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Endurance"
+            )
             has_endurance_data = True
 
     return render_template("plot.html",
@@ -542,32 +554,6 @@ def wilks(user_id):
 @app.route('/track_rm/<int:user_id>')
 @login_required
 def track_rm(user_id):
-
-    def create_rm_df(pr_data, lift_id):
-        """
-
-        :param pr_data: A list of a specific exercise mades on Wilks table
-        :param lift_id: 1 for Squat, 2 for Bench, 3 for Deadlift
-        :return: DataFrame object with columns refers to Date and Charge
-
-        """
-        df_pr = pd.DataFrame(columns=['Date', 'Charge'])
-
-        for pr in pr_data:
-            if lift_id == 1:
-                lift_data = pr.max_squat
-            elif lift_id == 2:
-                lift_data = pr.max_bench
-            elif lift_id == 3:
-                lift_data = pr.max_deadlift
-            else:
-                lift_data = None
-
-            df_pr = df_pr.append({'Date': pr.date,
-                                  'Charge': lift_data}, ignore_index=True)
-
-        return df_pr
-
     # Get all PRs for each exercise(Squat1, Bench2, Deadlift3):
     all_squat_pr = Wilks.query.filter_by(user_id=current_user.id, lift_id=1).all()
     all_bench_pr = Wilks.query.filter_by(user_id=current_user.id, lift_id=2).all()
@@ -580,14 +566,34 @@ def track_rm(user_id):
                                title_content="Mettre à ses jours ses records personnels", )
     else:
         # Generate DF for each PR exercise:
-        squat_df = create_rm_df(all_squat_pr, 1)
-        bench_df = create_rm_df(all_bench_pr, 2)
-        deadlift_df = create_rm_df(all_deadlift_pr, 3)
+        squat_df = pr_manager.create_rm_df(all_squat_pr, 1)
+        bench_df = pr_manager.create_rm_df(all_bench_pr, 2)
+        deadlift_df = pr_manager.create_rm_df(all_deadlift_pr, 3)
 
         # Sort values by most recents dates:
         squat_df = squat_df.sort_values(by="Date", ascending=False)
         bench_df = bench_df.sort_values(by="Date", ascending=False)
         deadlift_df = deadlift_df.sort_values(by="Date", ascending=False)
+
+        # Add 'Exercise' column for each DF:
+        squat_df['Exercice'] = 'Squat'
+        bench_df['Exercice'] = 'Bench'
+        deadlift_df['Exercice'] = 'Deadlift'
+
+        # Concat all DF together:
+        global_pr_df = pd.concat([squat_df, bench_df, deadlift_df])
+
+        # Generate line plot:
+        graphJSON = plot_function.line_plot(
+            df_exercise=global_pr_df,
+            color_column='Exercice',
+            title="SBD - Evolution de vos charges maximales en fonction du temps"
+        )
+
+        # Drop 'Exercice' column of DF:
+        squat_df.drop(['Exercice'], axis=1, inplace=True)
+        bench_df.drop(['Exercice'], axis=1, inplace=True)
+        deadlift_df.drop(['Exercice'], axis=1, inplace=True)
 
         return render_template('rm.html',
                                is_logged=current_user.is_authenticated,
@@ -598,6 +604,7 @@ def track_rm(user_id):
                                bench_performance_title="Vos derniers RM au Benchpress :",
                                deadlift_performance_tables=[deadlift_df.to_html(classes='data', index=False)],
                                deadlift_performance_title="Vos derniers RM au Deadlift :",
+                               graphJSON=graphJSON,
                                )
 
 
@@ -619,6 +626,7 @@ def edit_rm(user_id, exercise_name):
                                has_bw_data=False,
                                title_content=f"Ajout d'un nouveau record personnel pour le {exercise_name}")
     else:
+        # Add new PR:
         form = AddPersonalRecord()
         if form.validate_on_submit():
             body_user = Wilks.query.filter_by(user_id=current_user.id).all()
@@ -663,11 +671,43 @@ def edit_rm(user_id, exercise_name):
             flash("Le nouveau record a été enregistré avec succès.")
             return redirect(url_for('track_rm', user_id=current_user.id))
 
+        # Edit PR:
+        current_lift_id = request.args.get('lift_id')
+        get_all_pr = Wilks.query.filter_by(user_id=current_user.id, lift_id=current_lift_id).all()
+        pr_df = pr_manager.create_rm_df(get_all_pr, int(current_lift_id)).sort_values(by='Date', ascending=False)
+        pr_df['Delete'] = "Supprimer"
+
+        if len(get_all_pr) == 0:
+            has_pr_data = False
+        else:
+            has_pr_data = True
+
         return render_template('edit_rm.html',
                                is_logged=current_user.is_authenticated,
                                form=form,
                                has_bw_data=True,
+                               has_pr_data=has_pr_data,
+                               column_names=pr_df.columns.values,
+                               row_data=list(pr_df.values.tolist()),
+                               link_delete="Delete",
+                               zip=zip,
+                               tables=[pr_df.to_html(classes='data', index=True)],
+                               exercise_name=exercise_name,
+                               lift_id=int(current_lift_id),
                                title_content=f"Ajout d'un nouveau record personnel pour le {exercise_name}")
+
+
+@app.route('/delete-pr/<int:user_id>/<int:lift_id>', methods=['POST', 'GET'])
+@login_required
+def delete_pr(user_id, lift_id):
+    pr_date = request.args.get('pr_date')
+
+    # Delete PR according to the date
+    pr_to_delete = Wilks.query.filter_by(user_id=current_user.id, lift_id=lift_id, date=pr_date).first()
+    db.session.delete(pr_to_delete)
+    db.session.commit()
+
+    return redirect(url_for('track_rm', user_id=user_id))
 
 
 @app.route('/settings/<int:user_id>', methods=['POST', 'GET'])
