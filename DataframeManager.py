@@ -133,3 +133,5 @@ class DataframeManager:
         df_exercise['Répétitions'] = pd.to_numeric(arg=df_exercise['Répétitions'])
 
         return df_exercise
+
+
