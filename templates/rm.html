@@ -14,5 +14,37 @@
   <li><a href="{{url_for('edit_rm', user_id=current_user.id, exercise_name='Deadlift')}}">Deadlift</a></li>
 </ul>
 
+<hr>
+
+{% if has_data == False %}
+    <p><i class="far fa-info-circle"></i>Vous n'avez pas encore enregistré de données.</p>
+
+{% else %}
+
+    {% for table in squat_performance_tables %}
+        {% if table|length > 180 %}
+            <br>
+            <h3>{{squat_performance_title}}</h3>
+            {{ table|safe }}
+        {% endif %}
+    {% endfor %}
+
+    {% for table in bench_performance_tables %}
+        {% if table|length > 180 %}
+            <br>
+            <h3>{{bench_performance_title}}</h3>
+            {{ table|safe }}
+        {% endif %}
+    {% endfor %}
+
+    {% for table in deadlift_performance_tables %}
+        {% if table|length > 180 %}
+            <br>
+            <h3>{{deadlift_performance_title}}</h3>
+            {{ table|safe }}
+        {% endif %}
+    {% endfor %}
+
+{% endif %}
 </body>
 </html>
