@@ -10,7 +10,7 @@ class Plot:
     def __init__(self):
         pass
 
-    def line_plot(self, df_exercise, title):
+    def line_plot(self, df_exercise, color_column, title):
 
         print(df_exercise.dtypes)
         print(df_exercise)
@@ -20,7 +20,7 @@ class Plot:
             df_exercise,
             x='Date',
             y='Charge',
-            color='Répétitions',
+            color=color_column,
             markers=True,
             width=900,
             height=500
@@ -30,4 +30,5 @@ class Plot:
             yaxis_title="Charge (en Kg)",
         )
         return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
 
