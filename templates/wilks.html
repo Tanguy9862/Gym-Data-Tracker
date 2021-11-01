@@ -7,6 +7,34 @@
 </p>
 <img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/013af9c9fd2b149627287957dec0c50b70823657"/>
 
+<br>
+<hr>
+<br>
+{% if not has_data %}
+    <p><i class="far fa-info-circle"></i> Vous n'avez pas encore enregistré suffisamment de données pour que nous puissions calculer vos coefficients WILKS.</p>
+{% else %}
+<div id="left_side" style="float:left;">
+{% for table in performance_tables %}
+    <h3>{{performance_title}}</h3>
+    {{ table|safe }}
+{% endfor %}
+
+<div id="chart2"></div>
+<script type='text/javascript'>
+    var graphs = {{graphJSON2 | safe}};
+    Plotly.plot('chart2',graphs,{});
+</script>
+</div>
+
+<div id="right_side" style="float:right;">
+<div id="chart1"></div>
+    <script type='text/javascript'>
+        var graphs = {{graphJSON1 | safe}};
+        Plotly.plot('chart1',graphs,{});
+    </script>
+</div>
+{% endif %}
+
 
 </body>
 </html>
