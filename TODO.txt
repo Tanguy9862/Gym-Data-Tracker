@@ -22,7 +22,7 @@
 		-> Table Wilks : colonne user_id + date + max_bench + max_dl 
 				+ max_squat + bw + wilks OK
 
-	- * Page tracker ses PR: OK
+	- * Page tracker ses PR:
 		-> 1 df par exercice avec date + pr OK
 		-> Pourvoir supprimer ses PR déjà ajoutés OK
 		-> 1 graphique général regroupant l'évolution des PR des 3 lifts en fn de la date OK
@@ -33,6 +33,8 @@
 		-> DF avec colonne bw/pr squat/pr bench/pr deadlift/total/wilk (le wilk est calculé seulement s'il y a une value dans les 3 lift)
 		-> Graphique RM/mouvement (du genre histogramme 3 barres, 1 par lift, abs=date/ord=charge/barre=lift)
 		-> Graphique (2ord:  Wilks ; Bw) en fonction de la date (en abs.)
+		-> Quand on s'apprête à ajouter un PR sur la page edit_rm, afficher le poids du corps auquel celui-ci sera ajouté
+		    -> pas oublier de terminer la catégorie "Page tracker ses PR"
 
 	- Graphique Indice de NUCKOLS en fonction du BW et date (c.f google)
 	- Graphique mélangeant tous les formats de reps avec BW en abscisse (?)
