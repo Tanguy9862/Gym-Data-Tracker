@@ -11,8 +11,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from werkzeug.security import generate_password_hash, check_password_hash
 import requests
 from DataframeManager import DataframeManager
+from UserData import GetUserData
 from PRManager import ManagerPR
 from PlotData import Plot
+from WilksCalculator import WilksCalculator
 from form import LoginForm, RegisterForm, AddExercise, EditWorkout, SearchUser, AddPersonalRecord, EditBodyWeight
 from datetime import datetime
 
@@ -42,6 +44,9 @@ plot_function = Plot()
 
 # CREATE PR MANAGER OBJECT
 pr_manager = ManagerPR()
+
+# CREATE USER DATA OBJECT
+user_data = GetUserData()
 
 
 @login_manager.user_loader
@@ -546,6 +551,38 @@ def show_user(username):
 @app.route('/wilks/<int:user_id>')
 @login_required
 def wilks(user_id):
+    last_bw = user_data.get_last_bw(table=Wilks, user_id=current_user.id)
+
+    # Get all lifts data:
+    get_all_squat_data = Wilks.query.filter_by(user_id=current_user.id).all()
+    get_all_bench_data = Wilks.query.filter_by(user_id=current_user.id).all()
+    get_all_deadlift_data = Wilks.query.filter_by(user_id=current_user.id).all()
+
+    # Create DF for each lifts:
+    squat_df = pr_manager.create_rm_df_by_bw(pr_data=get_all_squat_data, lift_id=1).dropna(axis=0)
+    bench_df = pr_manager.create_rm_df_by_bw(pr_data=get_all_bench_data, lift_id=2).dropna(axis=0)
+    deadlift_df = pr_manager.create_rm_df_by_bw(pr_data=get_all_deadlift_data, lift_id=3).dropna(axis=0)
+
+    # Create DF with only best values for each BW values:
+    all_bw_squat = pr_manager.generate_df_with_highest_pr(squat_df['BW'], exercise_name='Squat', lift_list=squat_df)
+    all_bw_bench = pr_manager.generate_df_with_highest_pr(bench_df['BW'], exercise_name='Bench', lift_list=bench_df)
+    all_bw_deadlift = pr_manager.generate_df_with_highest_pr(deadlift_df['BW'], exercise_name='Deadlift',
+                                                             lift_list=deadlift_df)
+
+    # Join DF:
+    join_df = all_bw_squat.join(all_bw_bench.set_index('BW'), on='BW')
+    join_df = join_df.join(all_bw_deadlift.set_index('BW'), on='BW')
+
+    # Add 'total' column:
+    join_df['Total'] = join_df['Squat'] + join_df['Bench'] + join_df['Deadlift']
+
+    # Calculate and add 'WILKS' column:
+    wilks_calculator = WilksCalculator()
+    join_df['WILKS'] = wilks_calculator.wilks_calculation(sex=current_user.sex, bw=join_df['BW'], total=join_df['Total'])
+    print(join_df)
+
+    # Drop rows with NaN values:
+
     return render_template('wilks.html',
                            is_logged=current_user.is_authenticated,
                            title_content="Détails relatifs à vos coefficients WILKS")
@@ -629,18 +666,7 @@ def edit_rm(user_id, exercise_name):
         # Add new PR:
         form = AddPersonalRecord()
         if form.validate_on_submit():
-            body_user = Wilks.query.filter_by(user_id=current_user.id).all()
-
-            date_model = datetime.strptime('1900-01-01', '%Y-%m-%d')
-            last_bw = None
-
-            # Get the last saved weight:
-            for wilks in body_user:
-                if wilks.bodyweight != None:
-                    if datetime.strptime(f'{wilks.date}', '%Y-%m-%d') > date_model:
-                        last_bw = wilks.bodyweight
-                        date_model = datetime.strptime(f'{wilks.date}', '%Y-%m-%d')
-            print(last_bw)
+            last_bw = user_data.get_last_bw(table=Wilks, user_id=current_user.id)
 
             if exercise_name == "Bench Press":
                 new_pr = Wilks(
