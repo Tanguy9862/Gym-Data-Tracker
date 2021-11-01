@@ -10,7 +10,7 @@
 	- Graphique page track_rm : Graphique montrant le PR(en kg) avec en abscisse la date, 1 courbe par lift, avec en text le BW
 		-> https://plotly.com/python/line-and-scatter/ -> 'Connected Scatterplots'
 
-	- Graphique (Wilks ; BW) en fonction de la date
+	- [OK] Graphique (Wilks ; BW)
 		-> Route WILKS OK
 		-> Prise en compte du genre lors de l'inscription OK
 		-> Page paramètres pour enregistrer son BW OK
@@ -30,11 +30,20 @@
 		    	-> https://plotly.com/python/line-and-scatter/ -> 'Connected Scatterplots'
 
 	-  * Page WILKS : 
-		-> DF avec colonne bw/pr squat/pr bench/pr deadlift/total/wilk (le wilk est calculé seulement s'il y a une value dans les 3 lift)
-		-> Graphique RM/mouvement (du genre histogramme 3 barres, 1 par lift, abs=date/ord=charge/barre=lift)
-		-> Graphique (2ord:  Wilks ; Bw) en fonction de la date (en abs.)
-		-> Quand on s'apprête à ajouter un PR sur la page edit_rm, afficher le poids du corps auquel celui-ci sera ajouté
-		    -> pas oublier de terminer la catégorie "Page tracker ses PR"
+		[1]:
+            -> DF avec colonne bw/pr squat/pr bench/pr deadlift/total/wilk (le wilk est calculé seulement s'il y a une value dans les 3 lift) OK
+            -> Graphique RM/mouvement (du genre histogramme 3 barres, 1 par lift, abs=lift nom, ord=charge) OK
+            -> Graphique x: bw, y: wilks OK
+            *-> Quand on s'apprête à ajouter un PR sur la page edit_rm, afficher le poids du corps auquel celui-ci sera ajouté
+            -> pas oublier de terminer la catégorie "Page tracker ses PR"
+         [2]:
+            -> Garder une trace des anciens WILKS associés à 1 BW (peut-être les sauvegarder dans une table ? user_id/date/bw/wilks)
+                -> Pour récupérer les données il s'agirait juste d'interroger la db
+            -> En faire un DF : date/bw/wilks
+            -> Afficher sur la Page WILKS l'évolution des WILKS en fonction de la date, 1 courbe par BW
+
+         [3]:
+            -> Déplacer l'histogramme des totaux en fonction du bw sur la route track_rm
 
 	- Graphique Indice de NUCKOLS en fonction du BW et date (c.f google)
 	- Graphique mélangeant tous les formats de reps avec BW en abscisse (?)
