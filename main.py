@@ -469,6 +469,10 @@ def show_plot(user_id, exercise_id):
         else:
             graphJSON_1 = plot_function.line_plot(
                 df_exercise,
+                x='Date',
+                y='Charge',
+                xaxis_title='Date',
+                yaxis_title='Charge (en Kg)',
                 color_column='Répétitions',
                 title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Force"
             )
@@ -488,6 +492,10 @@ def show_plot(user_id, exercise_id):
         else:
             graphJSON_2 = plot_function.line_plot(
                 df_exercise,
+                x='Date',
+                y='Charge',
+                yaxis_title='Charge (en Kg)',
+                xaxis_title='Date',
                 color_column='Répétitions',
                 title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Endurance"
             )
@@ -579,13 +587,47 @@ def wilks(user_id):
     # Calculate and add 'WILKS' column:
     wilks_calculator = WilksCalculator()
     join_df['WILKS'] = wilks_calculator.wilks_calculation(sex=current_user.sex, bw=join_df['BW'], total=join_df['Total'])
-    print(join_df)
 
     # Drop rows with NaN values:
+    join_df = join_df.dropna(axis=0, how='any')
+
+    # Create line plot (WILKS/BW):
+    join_df_by_BW = join_df.sort_values(by='BW')
+    graphJSON1 = plot_function.line_plot(
+        df_exercise=join_df_by_BW,
+        x='BW',
+        y='WILKS',
+        xaxis_title='Poids du corps',
+        yaxis_title='Coefficient WILKS',
+        color_column=None,
+        title="Evolution du Coefficient WILKS en fonction du poids de corps"
+    )
+
+    # Create Histogram (BW/PR/LIFT):
+    graphJSON2 = plot_function.hist_plot(
+        function='sum',
+        x_axis=join_df['BW'],
+        y_axis=[join_df['Squat'], join_df['Bench'], join_df['Deadlift']],
+        label_name=['Squat', 'Bench', 'Deadlift'],
+        title="Charges maximales par exercice en fonction du poids de corps",
+        xaxis_title='Poids de corps (kg)',
+        yaxis_title='Charge (kg)',
+    )
+
+    if len(join_df) == 0:
+        has_data = False
+    else:
+        has_data = True
 
     return render_template('wilks.html',
                            is_logged=current_user.is_authenticated,
-                           title_content="Détails relatifs à vos coefficients WILKS")
+                           title_content="Détails relatifs à vos coefficients WILKS",
+                           performance_tables=[join_df.to_html(classes='data', index=False)],
+                           performance_title="Coefficients WILKS en fonction de vos totaux associés "
+                                             "à votre poids de corps",
+                           graphJSON1=graphJSON1,
+                           graphJSON2=graphJSON2,
+                           has_data=has_data)
 
 
 @app.route('/track_rm/<int:user_id>')
@@ -623,6 +665,10 @@ def track_rm(user_id):
         # Generate line plot:
         graphJSON = plot_function.line_plot(
             df_exercise=global_pr_df,
+            x='Date',
+            y='Charge',
+            xaxis_title='Date',
+            yaxis_title='Charge (en Kg)',
             color_column='Exercice',
             title="SBD - Evolution de vos charges maximales en fonction du temps"
         )
