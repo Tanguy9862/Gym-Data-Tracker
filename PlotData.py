@@ -10,25 +10,40 @@ class Plot:
     def __init__(self):
         pass
 
-    def line_plot(self, df_exercise, color_column, title):
+    def line_plot(self, df_exercise, color_column, title, x, y, yaxis_title, xaxis_title):
 
-        print(df_exercise.dtypes)
-        print(df_exercise)
-
-        df_exercise = df_exercise.sort_values(by='Date', ascending=False)  # à modifier
         fig = px.line(
             df_exercise,
-            x='Date',
-            y='Charge',
+            x=x,
+            y=y,
             color=color_column,
             markers=True,
             width=900,
-            height=500
+            height=500,
+            line_shape='spline'
         )
         fig.update_layout(
             title=title,
-            yaxis_title="Charge (en Kg)",
+            xaxis_title=xaxis_title,
+            yaxis_title=yaxis_title,
         )
+        return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+    def hist_plot(self, function, x_axis, y_axis, label_name, title, xaxis_title, yaxis_title):
+
+        fig = go.Figure()
+        fig.add_trace(go.Histogram(histfunc=function, y=y_axis[0], x=x_axis, name=label_name[0]))
+        fig.add_trace(go.Histogram(histfunc=function, y=y_axis[1], x=x_axis, name=label_name[1]))
+        fig.add_trace(go.Histogram(histfunc=function, y=y_axis[2], x=x_axis, name=label_name[2]))
+
+        fig.update_layout(
+            title=title,
+            xaxis_title=xaxis_title,
+            yaxis_title=yaxis_title,
+            width=600,
+            height=500
+        )
+
         return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 
