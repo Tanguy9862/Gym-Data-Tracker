@@ -22,20 +22,20 @@
 		-> Table Wilks : colonne user_id + date + max_bench + max_dl 
 				+ max_squat + bw + wilks OK
 
-	- * Page tracker ses PR:
+	- [OK] Page tracker ses PR:
 		-> 1 df par exercice avec date + pr OK
 		-> Pourvoir supprimer ses PR déjà ajoutés OK
 		-> 1 graphique général regroupant l'évolution des PR des 3 lifts en fn de la date OK
-		-> Ajout dans le graphique : avec en text le BW
-		    	-> https://plotly.com/python/line-and-scatter/ -> 'Connected Scatterplots'
+		-> Ajout dans le graphique : avec en text le BW OK
+		    	-> https://plotly.com/python/line-and-scatter/ -> 'Connected Scatterplots' OK
 
 	-  * Page WILKS : 
-		[1]:
+		[1]: [OK]
             -> DF avec colonne bw/pr squat/pr bench/pr deadlift/total/wilk (le wilk est calculé seulement s'il y a une value dans les 3 lift) OK
             -> Graphique RM/mouvement (du genre histogramme 3 barres, 1 par lift, abs=lift nom, ord=charge) OK
             -> Graphique x: bw, y: wilks OK
-            *-> Quand on s'apprête à ajouter un PR sur la page edit_rm, afficher le poids du corps auquel celui-ci sera ajouté
-            -> pas oublier de terminer la catégorie "Page tracker ses PR"
+            *-> Quand on s'apprête à ajouter un PR sur la page edit_rm, afficher le poids du corps auquel celui-ci sera ajouté OK
+            -> pas oublier de terminer la catégorie "Page tracker ses PR" OK
          [2]:
             -> Garder une trace des anciens WILKS associés à 1 BW (peut-être les sauvegarder dans une table ? user_id/date/bw/wilks)
                 -> Pour récupérer les données il s'agirait juste d'interroger la db
