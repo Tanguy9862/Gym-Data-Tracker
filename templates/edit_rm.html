@@ -2,6 +2,7 @@
 {% import "bootstrap/wtf.html" as wtf %}
 
 {% if has_bw_data %}
+    <p>Votre poids de corps actuel est de <strong>{{last_bw}} kg.</strong></p>
     {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "primary"}) }}
 {% else %}
     {% with messages = get_flashed_messages() %}

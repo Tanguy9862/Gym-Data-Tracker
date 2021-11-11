@@ -471,6 +471,7 @@ def show_plot(user_id, exercise_id):
                 df_exercise,
                 x='Date',
                 y='Charge',
+                text=None,
                 xaxis_title='Date',
                 yaxis_title='Charge (en Kg)',
                 color_column='Répétitions',
@@ -494,6 +495,7 @@ def show_plot(user_id, exercise_id):
                 df_exercise,
                 x='Date',
                 y='Charge',
+                text=None,
                 yaxis_title='Charge (en Kg)',
                 xaxis_title='Date',
                 color_column='Répétitions',
@@ -597,6 +599,7 @@ def wilks(user_id):
         df_exercise=join_df_by_BW,
         x='BW',
         y='WILKS',
+        text=None,
         xaxis_title='Poids du corps',
         yaxis_title='Coefficient WILKS',
         color_column=None,
@@ -661,12 +664,14 @@ def track_rm(user_id):
 
         # Concat all DF together:
         global_pr_df = pd.concat([squat_df, bench_df, deadlift_df])
+        print(global_pr_df)
 
         # Generate line plot:
         graphJSON = plot_function.line_plot(
             df_exercise=global_pr_df,
             x='Date',
             y='Charge',
+            text='BW',
             xaxis_title='Date',
             yaxis_title='Charge (en Kg)',
             color_column='Exercice',
@@ -677,6 +682,11 @@ def track_rm(user_id):
         squat_df.drop(['Exercice'], axis=1, inplace=True)
         bench_df.drop(['Exercice'], axis=1, inplace=True)
         deadlift_df.drop(['Exercice'], axis=1, inplace=True)
+
+        # Drop 'BW' column of DF:
+        squat_df.drop(['BW'], axis=1, inplace=True)
+        bench_df.drop(['BW'], axis=1, inplace=True)
+        deadlift_df.drop(['BW'], axis=1, inplace=True)
 
         return render_template('rm.html',
                                is_logged=current_user.is_authenticated,
@@ -765,6 +775,7 @@ def edit_rm(user_id, exercise_name):
                                zip=zip,
                                tables=[pr_df.to_html(classes='data', index=True)],
                                exercise_name=exercise_name,
+                               last_bw=user_data.get_last_bw(table=Wilks, user_id=current_user.id),
                                lift_id=int(current_lift_id),
                                title_content=f"Ajout d'un nouveau record personnel pour le {exercise_name}")
 

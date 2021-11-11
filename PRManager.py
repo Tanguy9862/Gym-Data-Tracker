@@ -26,7 +26,8 @@ class ManagerPR:
                 lift_data = None
 
             df_pr = df_pr.append({'Date': pr.date,
-                                  'Charge': lift_data}, ignore_index=True)
+                                  'Charge': lift_data,
+                                  'BW': pr.bodyweight}, ignore_index=True)
 
         return df_pr
 

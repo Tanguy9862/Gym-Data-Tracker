@@ -10,12 +10,13 @@ class Plot:
     def __init__(self):
         pass
 
-    def line_plot(self, df_exercise, color_column, title, x, y, yaxis_title, xaxis_title):
+    def line_plot(self, df_exercise, color_column, title, x, y, text, yaxis_title, xaxis_title):
 
         fig = px.line(
             df_exercise,
             x=x,
             y=y,
+            text=text,
             color=color_column,
             markers=True,
             width=900,
@@ -26,6 +27,9 @@ class Plot:
             title=title,
             xaxis_title=xaxis_title,
             yaxis_title=yaxis_title,
+        )
+        fig.update_traces(
+            textposition="bottom right"
         )
         return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
