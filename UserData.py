@@ -33,3 +33,24 @@ class GetUserData:
                 if pr.max_deadlift > max_lift:
                     max_lift = pr.max_deadlift
         return max_lift
+
+    def get_last_date_last_pr(self, index, table, user_id, df):
+        """
+        Get the last date of the last PR
+        :param index: row in join_df
+        :return: most recent date of the last PR
+        """
+
+        squat_date = table.query.filter_by(user_id=user_id,
+                                               max_squat=df['Squat'].iloc[index]).first().date
+        bench_date = table.query.filter_by(user_id=user_id,
+                                               max_bench=df['Bench'].iloc[index]).first().date
+        deadlift_date = table.query.filter_by(user_id=user_id,
+                                                  max_deadlift=df['Deadlift'].iloc[index]).first().date
+
+        all_dates = [datetime.strptime(f'{squat_date}', '%Y-%m-%d'),
+                     datetime.strptime(f'{bench_date}', '%Y-%m-%d'),
+                     datetime.strptime(f'{deadlift_date}', '%Y-%m-%d')]
+
+        return max(all_dates)
+
