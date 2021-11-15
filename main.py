@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import pandas
 import pandas as pd
 from flask import Flask, render_template, redirect, url_for, flash, request, abort
 from flask import render_template
@@ -68,8 +69,11 @@ class User(UserMixin, db.Model):
     # Relation with ExercisePerformance table:
     performances = relationship("ExercisePerformance", back_populates="exercise_performance_user")
 
+    # Relation with PrDetails table:
+    prs = relationship("PrDetails", back_populates="prdetails_user")
+
     # Relation with Wilks table:
-    wilks = relationship("Wilks", back_populates="wilks_user")
+    wilks = relationship("Wilks", back_populates="wilks_data")
 
 
 class Exercise(db.Model):
@@ -110,22 +114,36 @@ class ExercisePerformance(db.Model):
     twenty_reps = db.Column(db.Integer, nullable=True)
 
 
-class Wilks(db.Model):
-    __tablename__ = "wilks_details"
+class PrDetails(db.Model):
+    __tablename__ = "pr_details"
     id = db.Column(db.Integer, primary_key=True, unique=True)
 
     # Relation with User table:
     user_id = db.Column(db.Integer, db.ForeignKey("user_info.id"))
-    wilks_user = relationship("User", back_populates="wilks")
+    prdetails_user = relationship("User", back_populates="prs")
 
-    # Wilks Data:
+    # PR Data:
     date = db.Column(db.String(20), nullable=False)
     lift_id = db.Column(db.Integer, nullable=True)
     max_bench = db.Column(db.Float, nullable=True)
     max_squat = db.Column(db.Float, nullable=True)
     max_deadlift = db.Column(db.Float, nullable=True)
     bodyweight = db.Column(db.Float, nullable=True)
-    wilks = db.Column(db.Float, nullable=True)
+
+
+class Wilks(db.Model):
+    __tablename__ = "wilks_data"
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+
+    # Relation with User table:
+    user_id = db.Column(db.Integer, db.ForeignKey("user_info.id"))
+    wilks_data = relationship("User", back_populates="wilks")
+
+    # Wilks Data:
+    date = db.Column(db.String(20), nullable=False)
+    bodyweight = db.Column(db.Float, nullable=False)
+    total = db.Column(db.Integer, nullable=False)
+    wilks_coeff = db.Column(db.Float, nullable=False)
 
 
 db.create_all()
@@ -561,12 +579,12 @@ def show_user(username):
 @app.route('/wilks/<int:user_id>')
 @login_required
 def wilks(user_id):
-    last_bw = user_data.get_last_bw(table=Wilks, user_id=current_user.id)
+    last_bw = user_data.get_last_bw(table=PrDetails, user_id=current_user.id)
 
     # Get all lifts data:
-    get_all_squat_data = Wilks.query.filter_by(user_id=current_user.id).all()
-    get_all_bench_data = Wilks.query.filter_by(user_id=current_user.id).all()
-    get_all_deadlift_data = Wilks.query.filter_by(user_id=current_user.id).all()
+    get_all_squat_data = PrDetails.query.filter_by(user_id=current_user.id).all()
+    get_all_bench_data = PrDetails.query.filter_by(user_id=current_user.id).all()
+    get_all_deadlift_data = PrDetails.query.filter_by(user_id=current_user.id).all()
 
     # Create DF for each lifts:
     squat_df = pr_manager.create_rm_df_by_bw(pr_data=get_all_squat_data, lift_id=1).dropna(axis=0)
@@ -622,6 +640,62 @@ def wilks(user_id):
     else:
         has_data = True
 
+    # Checking if there are new Wilks data to add:
+    if join_df.shape[0] > len(Wilks.query.filter_by(user_id=current_user.id).all()):
+
+        if len(Wilks.query.filter_by(user_id=current_user.id).all()) == 0:
+
+            for row in range(join_df.shape[0]):
+
+                # Add data into Wilks table:
+                new_wilks = Wilks(
+                    date=user_data.get_last_date_last_pr(index=0, table=PrDetails, user_id=current_user.id, df=join_df),
+                    bodyweight=join_df.loc[row]['BW'],
+                    total=join_df.loc[row]['Total'],
+                    wilks_coeff=join_df.loc[row]['WILKS'],
+                    wilks_data=current_user
+                )
+                db.session.add(new_wilks)
+                db.session.commit()
+
+        elif join_df.shape[0] == len(Wilks.query.filter_by(user_id=current_user.id).all()) + 1:
+
+            # Add data into Wilks table:
+            new_wilks = Wilks(
+                date=user_data.get_last_date_last_pr(index=-1, table=PrDetails, user_id=current_user.id, df=join_df),
+                bodyweight=join_df['BW'].iloc[-1],
+                total=join_df['Total'].iloc[-1],
+                wilks_coeff=join_df['WILKS'].iloc[-1],
+                wilks_data=current_user
+            )
+            db.session.add(new_wilks)
+            db.session.commit()
+
+
+    print(join_df)
+    # Create Wilks/Date DF:
+    wilks_by_date_df = pd.DataFrame(columns=['Date', 'Total', 'WILKS'])
+
+    for wilks in Wilks.query.filter_by(user_id=current_user.id).all():
+        wilks_by_date_df = wilks_by_date_df.append({'Date': pandas.to_datetime(wilks.date),
+                                                    'WILKS': wilks.wilks_coeff,
+                                                    'Total': wilks.total},
+                                                   ignore_index=True)
+
+    print(wilks_by_date_df)
+
+    # Create line plot (Wilks/Date):
+    graphJSON3 = plot_function.line_plot(
+        df_exercise=wilks_by_date_df,
+        title="Evolution de vos coefficients WILKS en fonction du temps",
+        color_column=None,
+        x=wilks_by_date_df['Date'],
+        y=wilks_by_date_df['WILKS'],
+        text=None,
+        xaxis_title='Date',
+        yaxis_title='WILKS Coefficient',
+    )
+
     return render_template('wilks.html',
                            is_logged=current_user.is_authenticated,
                            title_content="Détails relatifs à vos coefficients WILKS",
@@ -630,6 +704,7 @@ def wilks(user_id):
                                              "à votre poids de corps",
                            graphJSON1=graphJSON1,
                            graphJSON2=graphJSON2,
+                           graphJSON3=graphJSON3,
                            has_data=has_data)
 
 
@@ -637,9 +712,9 @@ def wilks(user_id):
 @login_required
 def track_rm(user_id):
     # Get all PRs for each exercise(Squat1, Bench2, Deadlift3):
-    all_squat_pr = Wilks.query.filter_by(user_id=current_user.id, lift_id=1).all()
-    all_bench_pr = Wilks.query.filter_by(user_id=current_user.id, lift_id=2).all()
-    all_deadlift_pr = Wilks.query.filter_by(user_id=current_user.id, lift_id=3).all()
+    all_squat_pr = PrDetails.query.filter_by(user_id=current_user.id, lift_id=1).all()
+    all_bench_pr = PrDetails.query.filter_by(user_id=current_user.id, lift_id=2).all()
+    all_deadlift_pr = PrDetails.query.filter_by(user_id=current_user.id, lift_id=3).all()
 
     if len(all_squat_pr) + len(all_bench_pr) + len(all_deadlift_pr) == 0:
         return render_template('rm.html',
@@ -684,9 +759,12 @@ def track_rm(user_id):
         deadlift_df.drop(['Exercice'], axis=1, inplace=True)
 
         # Drop 'BW' column of DF:
-        squat_df.drop(['BW'], axis=1, inplace=True)
-        bench_df.drop(['BW'], axis=1, inplace=True)
-        deadlift_df.drop(['BW'], axis=1, inplace=True)
+        if len(squat_df) > 0:
+            squat_df.drop(['BW'], axis=1, inplace=True)
+        if len(bench_df) > 0:
+            bench_df.drop(['BW'], axis=1, inplace=True)
+        if len(deadlift_df) > 0:
+            deadlift_df.drop(['BW'], axis=1, inplace=True)
 
         return render_template('rm.html',
                                is_logged=current_user.is_authenticated,
@@ -704,7 +782,7 @@ def track_rm(user_id):
 @app.route('/edit_rm/<int:user_id>/<exercise_name>', methods=['POST', 'GET'])
 @login_required
 def edit_rm(user_id, exercise_name):
-    get_bw_data = Wilks.query.filter_by(user_id=current_user.id).all()
+    get_bw_data = PrDetails.query.filter_by(user_id=current_user.id).all()
     has_bw_data = False
 
     for bw in get_bw_data:
@@ -722,31 +800,31 @@ def edit_rm(user_id, exercise_name):
         # Add new PR:
         form = AddPersonalRecord()
         if form.validate_on_submit():
-            last_bw = user_data.get_last_bw(table=Wilks, user_id=current_user.id)
+            last_bw = user_data.get_last_bw(table=PrDetails, user_id=current_user.id)
 
             if exercise_name == "Bench Press":
-                new_pr = Wilks(
+                new_pr = PrDetails(
                     date=form.date_record.data,
                     lift_id=2,
                     max_bench=form.input_record.data,
                     bodyweight=last_bw,
-                    wilks_user=current_user
+                    prdetails_user=current_user
                 )
             elif exercise_name == "Squat":
-                new_pr = Wilks(
+                new_pr = PrDetails(
                     date=form.date_record.data,
                     lift_id=1,
                     max_squat=form.input_record.data,
                     bodyweight=last_bw,
-                    wilks_user=current_user
+                    prdetails_user=current_user
                 )
             elif exercise_name == "Deadlift":
-                new_pr = Wilks(
+                new_pr = PrDetails(
                     date=form.date_record.data,
                     lift_id=3,
                     max_deadlift=form.input_record.data,
                     bodyweight=last_bw,
-                    wilks_user=current_user
+                    prdetails_user=current_user
                 )
             db.session.add(new_pr)
             db.session.commit()
@@ -755,7 +833,7 @@ def edit_rm(user_id, exercise_name):
 
         # Edit PR:
         current_lift_id = request.args.get('lift_id')
-        get_all_pr = Wilks.query.filter_by(user_id=current_user.id, lift_id=current_lift_id).all()
+        get_all_pr = PrDetails.query.filter_by(user_id=current_user.id, lift_id=current_lift_id).all()
         pr_df = pr_manager.create_rm_df(get_all_pr, int(current_lift_id)).sort_values(by='Date', ascending=False)
         pr_df['Delete'] = "Supprimer"
 
@@ -775,7 +853,7 @@ def edit_rm(user_id, exercise_name):
                                zip=zip,
                                tables=[pr_df.to_html(classes='data', index=True)],
                                exercise_name=exercise_name,
-                               last_bw=user_data.get_last_bw(table=Wilks, user_id=current_user.id),
+                               last_bw=user_data.get_last_bw(table=PrDetails, user_id=current_user.id),
                                lift_id=int(current_lift_id),
                                title_content=f"Ajout d'un nouveau record personnel pour le {exercise_name}")
 
@@ -786,7 +864,7 @@ def delete_pr(user_id, lift_id):
     pr_date = request.args.get('pr_date')
 
     # Delete PR according to the date
-    pr_to_delete = Wilks.query.filter_by(user_id=current_user.id, lift_id=lift_id, date=pr_date).first()
+    pr_to_delete = PrDetails.query.filter_by(user_id=current_user.id, lift_id=lift_id, date=pr_date).first()
     db.session.delete(pr_to_delete)
     db.session.commit()
 
@@ -798,10 +876,10 @@ def delete_pr(user_id, lift_id):
 def settings(user_id):
     form = EditBodyWeight()
     if form.validate_on_submit():
-        new_bw = Wilks(
+        new_bw = PrDetails(
             date=form.date_bw.data,
             bodyweight=form.input_bw.data,
-            wilks_user=current_user
+            prdetails_user=current_user
         )
         db.session.add(new_bw)
         db.session.commit()
