@@ -42,11 +42,24 @@
             -> En faire un DF : date/bw/wilks
             -> Afficher sur la Page WILKS l'évolution des WILKS en fonction de la date, 1 courbe par BW
 
-         [3]:
-            -> Déplacer l'histogramme des totaux en fonction du bw sur la route track_rm
+    - Page Dashboard:
+        -> Générer une liste de liens de tous les exercices :
+            -> chaque lien renvoie vers le df de l'exercice en question + graphiques associés
 
-	- Graphique Indice de NUCKOLS en fonction du BW et date (c.f google)
-	- Graphique mélangeant tous les formats de reps avec BW en abscisse (?)
+
+    - Changement de la prise en compte de nouvelles perfs :
+        - Demander ds un premier temps le nombre de séries
+            -> Générer autant d'input en fn du nombre de séries (ainsi 1 input  = ChargeXRépétitions@RPE)
+                -> Le RPE n'a pas pour obligation d'être précisé
+            -> A partir de ces inputs, remplir de façon automatique les colonnes (3 reps, 15 reps, etc.)
+
+    - Réfléchir à la possibilité d'une prise en compte du tempo
+
+    - Développer un peu plus la page Profil user
+
+    - Sleep time ?
+
+    - Warm up set ?
 
 - Empêcher le fait d'ajouter un exercice s'il y en a déjà un du même nom
 
