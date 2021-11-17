@@ -267,7 +267,7 @@ def add_new_exercise(user_id):
                            title_content="Commencer à tracker un nouvel exercice")
 
 
-@app.route('/show-workout/<int:user_id>')
+@app.route('/show_workout/<int:user_id>')
 @login_required
 def show_workout(user_id):
     if user_id != current_user.id:
@@ -440,13 +440,13 @@ def get_workout_details(user_id, exercise_id):
                                )
 
 
-@app.route('/edit-workout/<int:user_id>/<int:exercise_id>', methods=['POST', 'GET'])
+@app.route('/edit_workout/<int:user_id>/<int:exercise_id>', methods=['POST', 'GET'])
 @login_required
 def edit_workout(user_id, exercise_id):
     exercise = Exercise.query.get(exercise_id)
-    # print(exercise)
     form = EditWorkout()
     if form.validate_on_submit():
+
         def is_rpe_null(data):
             """
             Checking if the RPE is null, in this case RPE column would be empty, otherwise RPE will be
@@ -457,6 +457,7 @@ def edit_workout(user_id, exercise_id):
                 return data
             else:
                 return data
+
         new_performance = ExercisePerformance(
             date_performance=form.date_field.data,
             exercise_performance_user=current_user,
@@ -472,10 +473,43 @@ def edit_workout(user_id, exercise_id):
             fifteen_reps=form.fifteen_reps.data,
             twenty_reps=form.twenty_reps.data,
         )
+
+        #### Get all performances and organized it
+
+        all_perfs = form.all_data.data.split(',')
+        print(f'all_perfs: {all_perfs}')
+        organized_perfs = {form.date_field.data: {'charge': [], 'sets': [], 'reps': [], 'rpe': []}}
+
+        for n in range(len(all_perfs)):
+
+            if len(all_perfs[n].split('x')) != 3:
+                flash('Les données doivent être sous la forme ChargeXNbSériesXNbRépétitions')
+                return redirect(url_for('edit_workout', user_id=current_user.id, exercise_id=exercise_id))
+
+            else:
+                organized_perfs[form.date_field.data]['charge'].append(int(all_perfs[n].split('x')[0]))
+                organized_perfs[form.date_field.data]['sets'].append(int(all_perfs[n].split('x')[1]))
+                organized_perfs[form.date_field.data]['reps'].append(int(all_perfs[n].split('x')[-1].split('@')[0]))
+
+                print(f'split rpe :{all_perfs[n].split("@")}')
+
+                if '@' in all_perfs[n].split("@"):
+                    organized_perfs[form.date_field.data]['rpe'].append(int(all_perfs[n].split('@')[-1]))
+                else:
+                    organized_perfs[form.date_field.data]['rpe'].append(0)
+
+        print(organized_perfs)
+        # print(organized_perfs[form.date_field.data]['charge'])
+
+        ####
+
+
+
         db.session.add(new_performance)
         db.session.commit()
         flash("Les nouvelles données ont correctement été ajoutées.")
         return redirect(url_for('dashboard'))
+
     return render_template("edit_workout.html", is_logged=current_user.is_authenticated, exercise=exercise, form=form,
                            title_content=f"{exercise.exercise_name.title()} : Ajout d'une nouvelle performance")
 
@@ -591,10 +625,11 @@ def search_user():
                            form=form)
 
 
-@app.route('/show-user/<path:username>')
+@app.route('/profil/<path:username>')
 @login_required
 def show_user(username):
     get_user_info = User.query.filter_by(username=username).first()
+    print('lol')
     get_user_performance = ExercisePerformance.query.filter_by(user_id=get_user_info.id).all()
     df_exercise_performance = dataframe_manager.create_global_dataframe(table=ExercisePerformance,
                                                                         user_id=get_user_info.id).sort_values(
