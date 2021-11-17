@@ -11,6 +11,9 @@ Changement de la prise en compte de nouvelles performances:
 
 Affichage du RPE dans les DF (si celui-ci existe)
 
+WILKS page:
+    - /!\ Quand on supprime un PR le dernier graph n'est pas MAJ
+
 Intégration du tempo
 
 Intégration du sleep time
