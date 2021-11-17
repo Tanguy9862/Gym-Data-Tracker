@@ -1,0 +1,65 @@
+{% include "header.html" %}
+
+<h3>{{exercise_name}} - Performances globales</h3>
+{% if not global_data %}
+    <p>Vous n'avez pas encore ajouté de données concernant cet exercice.</p>
+{% else %}
+    {% for table in performance_tables %}
+        {{ table|safe }}
+    {% endfor %}
+{% endif %}
+
+<a href="{{url_for('edit_workout', user_id=current_user.id, exercise_id=exercise_id)}}">Ajout</a>
+{% if global_data %}
+    <a href="{{url_for('advanced_edit', user_id=current_user.id, exercise_id=exercise_id)}}">Edit</a>
+{% endif %}
+
+<hr>
+
+<h3>{{exercise_name}} - Performances axées sur la force</h3>
+{% if not strength_data %}
+    <p>Vous n'avez pas encore ajouté de données concernant cet axe.</p>
+
+{% else %}
+
+    {% for table in strength_tables %}
+        {{ table|safe }}
+    {% endfor %}
+
+    <div id="chart_1"></div>
+    <script type='text/javascript'>
+      var graphs = {{graphJSON_1 | safe}};
+      Plotly.plot('chart_1',graphs,{});
+    </script>
+
+{% endif %}
+
+<hr>
+
+<h3>{{exercise_name}} - Performances axées sur l'endurance</h3>
+{% if not endurance_data %}
+    <p>Vous n'avez pas encore ajouté de données concernant cet axe.</p>
+
+{% else %}
+
+    {% for table in endurance_tables %}
+        {{ table|safe }}
+    {% endfor %}
+
+    <div id="chart_2" style="margin-top:50px;"></div>
+    <script type='text/javascript'>
+        var graphs = {{graphJSON_2 | safe}};
+        Plotly.plot('chart_2',graphs,{});
+    </script>
+
+{% endif %}
+
+<ul>
+    <li><a href="">Globale</a></li>
+    <li><a href="">Force</a></li>
+    <li><a href="">Endurance</a></li>
+</ul>
+
+
+</body>
+</html>
