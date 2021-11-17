@@ -45,6 +45,9 @@ class EditWorkout(FlaskForm):
     ten_reps = StringField("Charge sur 10 répétitions")
     fifteen_reps = StringField("Charge sur 15 répétitions")
     twenty_reps = StringField("Charge sur 20 répétitions")
+
+    all_data = StringField('Ensemble des performances')
+
     validate_submit = SubmitField("Valider")
 
 
