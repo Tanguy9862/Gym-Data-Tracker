@@ -1,81 +1,63 @@
-- Modification de la gestion du RPE OK
-
-- Prise en compte du BW OK
-
-- Affichage des graphiques
+Graphiques:
 	* https://plotly.com/python/line-charts/
-	- Graphique 1/2/3 Reps OK
-	- Graphique 10/15/20 Reps OK
+	* https://plotly.com/python/line-and-scatter/ -> 'Connected Scatterplots'
 	- Graphique (RPE - charge ; 2 ordonnées) en fn de la date
-	- Graphique page track_rm : Graphique montrant le PR(en kg) avec en abscisse la date, 1 courbe par lift, avec en text le BW
-		-> https://plotly.com/python/line-and-scatter/ -> 'Connected Scatterplots'
 
-	- [OK] Graphique (Wilks ; BW)
-		-> Route WILKS OK
-		-> Prise en compte du genre lors de l'inscription OK
-		-> Page paramètres pour enregistrer son BW OK
-			-> Etre capable de sortir le plus récent BW enregistré valable pour l'associer aux nouveaux PR enregistrés] OK
-				-> Empêcher le fait d'ajouter des PR si on n'a jamais enregistré son BW OK
-
-		-> Page pour ajouter ses PR MAX 1 rep OK
-		-> Table User : ajouter colonne genre OK
-		-> Table Wilks : colonne user_id + date + max_bench + max_dl 
-				+ max_squat + bw + wilks OK
-
-	- [OK] Page tracker ses PR:
-		-> 1 df par exercice avec date + pr OK
-		-> Pourvoir supprimer ses PR déjà ajoutés OK
-		-> 1 graphique général regroupant l'évolution des PR des 3 lifts en fn de la date OK
-		-> Ajout dans le graphique : avec en text le BW OK
-		    	-> https://plotly.com/python/line-and-scatter/ -> 'Connected Scatterplots' OK
-
-	-  * Page WILKS : 
-		[1]: [OK]
-            -> DF avec colonne bw/pr squat/pr bench/pr deadlift/total/wilk (le wilk est calculé seulement s'il y a une value dans les 3 lift) OK
-            -> Graphique RM/mouvement (du genre histogramme 3 barres, 1 par lift, abs=lift nom, ord=charge) OK
-            -> Graphique x: bw, y: wilks OK
-            *-> Quand on s'apprête à ajouter un PR sur la page edit_rm, afficher le poids du corps auquel celui-ci sera ajouté OK
-            -> pas oublier de terminer la catégorie "Page tracker ses PR" OK
-         [2]:
-            -> Garder une trace des anciens WILKS associés à 1 BW (peut-être les sauvegarder dans une table ? user_id/date/bw/wilks)
-                -> Pour récupérer les données il s'agirait juste d'interroger la db
-            -> En faire un DF : date/bw/wilks
-            -> Afficher sur la Page WILKS l'évolution des WILKS en fonction de la date, 1 courbe par BW
-
-    - Page Dashboard:
-        -> Générer une liste de liens de tous les exercices :
-            -> chaque lien renvoie vers le df de l'exercice en question + graphiques associés
-
-
-    - Changement de la prise en compte de nouvelles perfs :
+Changement de la prise en compte de nouvelles performances:
         - Demander ds un premier temps le nombre de séries
             -> Générer autant d'input en fn du nombre de séries (ainsi 1 input  = ChargeXRépétitions@RPE)
                 -> Le RPE n'a pas pour obligation d'être précisé
             -> A partir de ces inputs, remplir de façon automatique les colonnes (3 reps, 15 reps, etc.)
 
-    - Réfléchir à la possibilité d'une prise en compte du tempo
+Affichage du RPE dans les DF (si celui-ci existe)
 
-    - Développer un peu plus la page Profil user
+Intégration du tempo
 
-    - Sleep time ?
+Intégration du sleep time
+    - Graphique avec des points dont le diamètre augmente en fonction de la charge et vire au rouge si sommeil insuffisant
 
-    - Warm up set ?
+Développer la page profil user:
+    - Bio
 
-- Empêcher le fait d'ajouter un exercice s'il y en a déjà un du même nom
+Page paramètres:
+    - Pouvoir modifier son mot de passe
+    - Pouvoir modifier son email
+    - Choisir sa catégorie powerlifting (influence sur la prédiction de données)
+    - Résilier son abonnement premium
 
-- Mettre dans l'ordre chronologique en fonction de la date les perf sur advanced-edit
+Empêcher le fait d'ajouter un exercice si l'utilisateur en a déjà ajouté un du même nom auparavant
 
-- Vérifier Token CSRF
+Refonte de la page advanced_edit:
+    -> + Mettre dans l'ordre chronologique la date des perfs
+    -> Pouvoir modifier le RPE
 
-- Add performance : prévoir l'erreur quand on ajoute un ',' ou un ';' à la place d'un point
-pour un nombre flottant -> erreur quand on affichera la page graphique
-    -> Ne pas oublier de convertir les données en pd.to_numeric()
+Ajout du  Token CSRF pour les form basiques
 
-- Alléger le code :
-	- Route show_plot (faire une fonction pour le try/except car il n'y a que la fonction
-	du dataframe qui change)
+Ajout d'une performance:
+    - Prévoir l'erreur quand on ajoute un ',' ou un ';' à la place d'un point
+        -> pour un nombre flottant -> erreur quand on affichera la page graphique
+        -> Ne pas oublier de convertir les données en pd.to_numeric()
 
-- Fichier __init__, regrouper les routes semblables par groupe dans un même fichier python
+Envoyer un email lors de l'inscription
+
+Système d'abonnement premium
+    - Accès à la prédiction de données
+    - Ne pas être limité dans l'ajout d'exercices
+
+Contact pour le support
+
+Détecter la première connexion
+    - Afficher un message de bienvenue
+
+Détecter la première connexion après une MAJ
+    - Afficher un message relayant les nouveautés
+
+Fichier __init__, regrouper les routes semblables par groupe dans un même fichier python
 	- c.f favoris
 
-- Pouvoir modifier le RPE
+Prédiction de données:
+    - Prédire les futurs max sur 1 rep
+        -> utiliser la data des compétitions de power des anciennes années
+        -> prise en compte de la catégorie de power + bw + sexe
+
+
