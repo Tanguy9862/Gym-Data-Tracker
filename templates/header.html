@@ -16,8 +16,6 @@
     <img src="https://avatars.dicebear.com/api/miniavs/{{current_user.username}}.svg?b=%2333276d&r=50&size=100&scale=92" style="float:left; margin-right: 15px; margin-bottom: 10px;">
 </a>
 <h1>{{title_content}}</h1>
-<a href="{{url_for('dashboard')}}">Tableau de bord</a>
-<a href="{{url_for('add_new_exercise', user_id=current_user.id)}}">Tracker un nouvel exercice</a>
 <a href="{{url_for('show_workout', user_id=current_user.id)}}">Ajouter une nouvelle performance</a>
 <a href="{{url_for('search_user')}}">Rechercher un utilisateur</a>
 <a href="{{url_for('track_rm', user_id=current_user.id)}}">Tracker ses RM</a>
