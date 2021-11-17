@@ -227,34 +227,6 @@ def dashboard():
                                                                         user_id=current_user.id)
     df_exercise_performance = df_exercise_performance.sort_values(by="Date", ascending=False)[:15]
 
-    # Create a new specific DataFrame for each Exercise :
-    get_unique_exercise = Exercise.query.filter_by(user_id=current_user.id).all()
-    unique_exercise = []
-    for exercise in get_unique_exercise:
-        unique_exercise.append(exercise.exercise_name)
-
-    all_specific_exercises_df = []
-    for _exercise in unique_exercise:
-        current_exercise = Exercise.query.filter_by(user_id=current_user.id, exercise_name=_exercise).first()
-        current_performances = ExercisePerformance.query.filter_by(user_id=current_user.id,
-                                                                   exercise_id=current_exercise.id).all()
-        # print(f"{current_performances[0].exercise.exercise_name} : {current_performances[0].global_performance}")
-
-        new_df = dataframe_manager.create_specific_dataframe(table=Exercise,
-                                                             exercise_id=current_exercise.id).sort_values(by="Date",
-                                                                                                          ascending=
-                                                                                                          False)
-        all_specific_exercises_df.append(new_df)
-
-    # Delete 'performance_id' column of specific exercise DataFrame :
-    for df in all_specific_exercises_df:
-        df = df.drop(['performance_id'], axis=1, inplace=True)
-
-    # Get all exercises names from Database :
-    get_all_exercises = Exercise.query.filter_by(user_id=current_user.id).all()
-    all_exercises_names = [exercise.exercise_name.title() for exercise in get_all_exercises]
-    all_exercises_id = [exercise.id for exercise in get_all_exercises]
-
     if len(df_exercise_performance) == 0:
         has_data = False
     else:
@@ -271,9 +243,6 @@ def dashboard():
                            is_logged=current_user.is_authenticated,
                            global_performance_tables=[df_exercise_performance.to_html(classes='data', index=False)],
                            global_performance_title="Vos 15 dernières performances globales :",
-                           specific_tables=[df.to_html(classes='data', index=False) for df in all_specific_exercises_df],
-                           specific_titles=all_exercises_names,
-                           specific_id=all_exercises_id,
                            has_data=has_data,
                            title_content=title_content)
 
@@ -304,10 +273,171 @@ def show_workout(user_id):
     if user_id != current_user.id:
         abort(404)
     else:
-        all_exercises = Exercise.query.filter_by(user_id=user_id).all()
-        return render_template("show_workout.html", is_logged=current_user.is_authenticated, all_exercises=all_exercises,
+        get_all_exercises = {exercise.id: exercise.exercise_name.title() for exercise in
+                             Exercise.query.filter_by(user_id=current_user.id).all()}
+
+        if len(get_all_exercises) == 0:
+            has_data = False
+        else:
+            has_data = True
+
+        return render_template("show_workout.html",
+                               is_logged=current_user.is_authenticated,
                                user_id=user_id,
+                               all_exercises=get_all_exercises,
+                               has_data=has_data,
                                title_content="Ajouter une nouvelle performance")
+
+
+@app.route('/get_workout_details/<int:user_id>/<int:exercise_id>')
+@login_required
+def get_workout_details(user_id, exercise_id):
+
+    if user_id != current_user.id:
+        abort(404)
+    else:
+        # poo
+        ###
+        def get_all_performances_by_id(exercise_id, user_id):
+            try:
+                all_performances_current_exercise = ExercisePerformance.query.filter_by(
+                    exercise_id=exercise_id, user_id=user_id).all()
+            except IndexError:
+                return False
+            else:
+                return all_performances_current_exercise
+        ####
+
+        get_exercise_name = Exercise.query.filter_by(user_id=current_user.id, id=exercise_id).first().exercise_name
+
+        # Create global performance DF:
+        global_df = pd.DataFrame(columns=['Date', 'Performance globale', 'Notes'])
+        get_global_performances = []
+        performances_data = ExercisePerformance.query.filter_by(user_id=current_user.id, exercise_id=exercise_id).all()
+
+        if len(performances_data) == 0:
+            global_data = False
+        else:
+            global_data = True
+            for perf in performances_data:
+                get_global_performances.append(
+                    {
+                        'date': perf.date_performance,
+                        'performance': perf.global_performance
+                    }
+                )
+
+            for perf in get_global_performances:
+                global_df = global_df.append({'Date': perf['date'],
+                                              'Performance globale': perf['performance'],
+                                              'Notes': 'notes_desc'},
+                                             ignore_index=True)
+
+            global_df = global_df.sort_values(by='Date', ascending=False)
+
+        # Create strength DF:
+        strength_df = pd.DataFrame(columns=['Date', '3 répétitions', '2 répétitions', '1 répétition'])
+
+        get_strength_performance = []
+
+        for perf in ExercisePerformance.query.filter_by(user_id=current_user.id, exercise_id=exercise_id).all():
+            if perf.three_reps != "" or perf.two_reps != "" or perf.one_reps != "":
+                get_strength_performance.append({
+                    'date': perf.date_performance,
+                    'x3': perf.three_reps if perf.three_reps != "" else "-",
+                    'x2': perf.two_reps if perf.two_reps != "" else "-",
+                    'x1': perf.one_reps if perf.one_reps != "" else "-",
+                })
+
+        if len(get_strength_performance) == 0:
+            strength_data = False
+            graphJSON_1 = None
+
+        else:
+            strength_data = True
+
+            for strength_perf in get_strength_performance:
+                strength_df = strength_df.append({'Date': strength_perf['date'],
+                                                  '3 répétitions': strength_perf['x3'],
+                                                  '2 répétitions': strength_perf['x2'],
+                                                  '1 répétition': strength_perf['x1']},
+                                                 ignore_index=True)
+
+            strength_df = strength_df.sort_values(by='Date', ascending=False)
+
+            # Generate DF for plotting strength data:
+            df_exercise = dataframe_manager.generate_strength_df_for_plot(
+                all_performances_current_exercise=get_all_performances_by_id(exercise_id, current_user.id)
+            )
+
+            graphJSON_1 = plot_function.line_plot(
+                df_exercise,
+                x='Date',
+                y='Charge',
+                text=None,
+                xaxis_title='Date',
+                yaxis_title='Charge (en Kg)',
+                color_column='Répétitions',
+                title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Force"
+            )
+
+        # Create endurance DF:
+        endurance_df = pd.DataFrame(columns=['Date', '10 répétitions', '15 répétitions', '20 répétitions'])
+
+        get_endurance_performance = []
+
+        for perf in ExercisePerformance.query.filter_by(user_id=current_user.id, exercise_id=exercise_id).all():
+            if perf.ten_reps != "" or perf.fifteen_reps != "" or perf.twenty_reps != "":
+                get_endurance_performance.append({
+                    'date': perf.date_performance,
+                    'x10': perf.ten_reps if perf.ten_reps != "" else "-",
+                    'x15': perf.fifteen_reps if perf.fifteen_reps != "" else "-",
+                    'x20': perf.twenty_reps if perf.twenty_reps != "" else "-",
+                })
+
+        if len(get_endurance_performance) == 0:
+            endurance_data = False
+            graphJSON_2 = None
+        else:
+            endurance_data = True
+            for endurance_perf in get_endurance_performance:
+                endurance_df = endurance_df.append({'Date': endurance_perf['date'],
+                                                  '10 répétitions': endurance_perf['x10'],
+                                                  '15 répétitions': endurance_perf['x15'],
+                                                  '20 répétitions': endurance_perf['x20']},
+                                                 ignore_index=True)
+
+            endurance_df = endurance_df.sort_values(by='Date', ascending=False)
+
+            # Generate DF for plotting endurance data:
+            df_exercise = dataframe_manager.generate_endurance_df_for_plot(
+                all_performances_current_exercise=get_all_performances_by_id(exercise_id, current_user.id)
+            )
+
+            graphJSON_2 = plot_function.line_plot(
+                df_exercise,
+                x='Date',
+                y='Charge',
+                text=None,
+                yaxis_title='Charge (en Kg)',
+                xaxis_title='Date',
+                color_column='Répétitions',
+                title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Endurance"
+            )
+
+        return render_template('workout_details.html',
+                               is_logged=current_user.is_authenticated,
+                               exercise_name=get_exercise_name.title(),
+                               exercise_id=exercise_id,
+                               global_data=global_data,
+                               performance_tables=[global_df.to_html(classes='data', index=False)],
+                               strength_data=strength_data,
+                               strength_tables = [strength_df.to_html(classes='data', index=False)],
+                               endurance_data=endurance_data,
+                               endurance_tables=[endurance_df.to_html(classes='data', index=False)],
+                               graphJSON_1=graphJSON_1,
+                               graphJSON_2=graphJSON_2
+                               )
 
 
 @app.route('/edit-workout/<int:user_id>/<int:exercise_id>', methods=['POST', 'GET'])
@@ -442,92 +572,6 @@ def delete_workout(user_id, exercise_id):
     flash("L'exercice a correctement été supprimé.")
 
     return redirect(url_for('dashboard'))
-
-
-@app.route('/show_plot/<int:user_id>/<int:exercise_id>')
-@login_required
-def show_plot(user_id, exercise_id):
-
-    get_all_exercises = Exercise.query.filter_by(user_id=current_user.id).all()
-    print(exercise_id)
-
-    def get_all_performances_by_id(exercise_id, user_id):
-        # Working with exercise_id '3'
-        try:
-            all_performances_current_exercise = ExercisePerformance.query.filter_by(
-                exercise_id=exercise_id, user_id=user_id).all()
-        except IndexError:
-            return False
-        else:
-            return all_performances_current_exercise
-
-    performance_exercise = get_all_performances_by_id(exercise_id=exercise_id, user_id=current_user.id)
-    print(performance_exercise)
-    if not performance_exercise:
-        flash("Vous n'avez pas encore enregistré suffisamment de données pour visualer les graphiques.")
-        graphJSON_1 = None
-        graphJSON_2 = None
-        has_strength_data = False
-        has_endurance_data = False
-
-    else:
-        print(get_all_performances_by_id(exercise_id, current_user.id))
-
-        # Strength data:
-        df_exercise = dataframe_manager.generate_strength_df_for_plot(
-            all_performances_current_exercise=get_all_performances_by_id(exercise_id, current_user.id)
-        )
-
-        try:
-            st_row = df_exercise['Charge'][0]
-        except IndexError:
-            flash("Vous n'avez pas encore enregistré suffisamment de données pour visualiser le graphique axé Force.")
-            graphJSON_1 = None
-            has_strength_data = False
-        else:
-            graphJSON_1 = plot_function.line_plot(
-                df_exercise,
-                x='Date',
-                y='Charge',
-                text=None,
-                xaxis_title='Date',
-                yaxis_title='Charge (en Kg)',
-                color_column='Répétitions',
-                title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Force"
-            )
-            has_strength_data = True
-
-        # Endurance data:
-        df_exercise = dataframe_manager.generate_endurance_df_for_plot(
-            all_performances_current_exercise=get_all_performances_by_id(exercise_id, current_user.id)
-        )
-
-        try:
-            st_row = df_exercise['Charge'][0]
-        except IndexError:
-            flash("Vous n'avez pas encore enregistré suffisamment de données pour visualiser le graphique axé Endurance.")
-            graphJSON_2 = None
-            has_endurance_data = False
-        else:
-            graphJSON_2 = plot_function.line_plot(
-                df_exercise,
-                x='Date',
-                y='Charge',
-                text=None,
-                yaxis_title='Charge (en Kg)',
-                xaxis_title='Date',
-                color_column='Répétitions',
-                title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Endurance"
-            )
-            has_endurance_data = True
-
-    return render_template("plot.html",
-                           is_logged=current_user.is_authenticated,
-                           title_content="Visualisation par le biais de graphiques",
-                           has_strength_data=has_strength_data,
-                           graphJSON_1=graphJSON_1,
-                           has_endurance_data=has_endurance_data,
-                           graphJSON_2=graphJSON_2)
 
 
 @app.route('/search', methods=['POST', 'GET'])
@@ -874,6 +918,10 @@ def delete_pr(user_id, lift_id):
 @app.route('/settings/<int:user_id>', methods=['POST', 'GET'])
 @login_required
 def settings(user_id):
+    if user_data.get_last_bw(table=PrDetails, user_id=current_user.id):
+        last_bw = user_data.get_last_bw(table=PrDetails, user_id=current_user.id)
+    else:
+        last_bw = False
     form = EditBodyWeight()
     if form.validate_on_submit():
         new_bw = PrDetails(
@@ -887,6 +935,7 @@ def settings(user_id):
         return redirect(url_for('settings', user_id=current_user.id))
     return render_template('settings.html',
                            form=form,
+                           last_bw=last_bw,
                            is_logged=current_user.is_authenticated,
                            title_content="Modification de vos paramètres")
 
