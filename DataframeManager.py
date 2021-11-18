@@ -7,34 +7,19 @@ class DataframeManager:
         pass
 
     def create_global_dataframe(self, table, user_id):
-        self.all_exercises_performances = table.query.filter_by(user_id=user_id).all()
 
-        # Create an empty DataFrame for all performances data :
-        df_global_exercise_performance = pd.DataFrame(
-            {
-                'Date': [],
-                'Exercice': [],
-                'Performance globale': [],
-                # 'three_reps': [],
-                # 'two_reps': [],
-                # 'one_reps': [],
-                # 'ten_reps': [],
-                # 'fifteen_reps': [],
-                # 'twenty_reps': [],
-            }
-        )
+        all_exercises_performances = table.query.filter_by(user_id=user_id).all()
 
-        for exercise_performance in self.all_exercises_performances:
+        # Create a DataFrame for all performances data :
+        df_global_exercise_performance = pd.DataFrame(columns=['Date', 'Exercice', 'Performance globale', 'Notes', 'Sommeil'])
+
+        for exercise_performance in all_exercises_performances:
             new_row = {
                 "Date": exercise_performance.date_performance,
                 "Exercice": exercise_performance.exercise.exercise_name.title(),
                 "Performance globale": exercise_performance.global_performance,
-                # "three_reps": exercise_performance.three_reps,
-                # "two_reps": exercise_performance.two_reps,
-                # "one_reps": exercise_performance.one_reps,
-                # "ten_reps": exercise_performance.ten_reps,
-                # "fifteen_reps": exercise_performance.fifteen_reps,
-                # "twenty_reps": exercise_performance.twenty_reps
+                "Notes": exercise_performance.notes,
+                "Sommeil": exercise_performance.sleep_time
             }
             df_global_exercise_performance = df_global_exercise_performance.append(new_row, ignore_index=True)
         return df_global_exercise_performance
