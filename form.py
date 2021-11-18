@@ -29,24 +29,9 @@ class AddExercise(FlaskForm):
 
 class EditWorkout(FlaskForm):
     date_field = DateField("Date(JJ-MM-AAAA)", format='%d-%m-%Y', default=datetime.date.today(), validators=[DataRequired()])
-    global_performance = StringField("Performance globale", validators=[DataRequired()])
-    three_reps = StringField("Charge sur 3 répétitions")
-    three_rpe = IntegerField("3 Répétitions RPE", default=0, validators=[NumberRange(min=0, max=10,
-                                                                          message="Le RPE doit être compris entre 1 et "
-                                                                                  "10.")])
-    two_reps = StringField("Charge sur 2 répétitions")
-    two_rpe = IntegerField("2 Répétitions RPE", default=0, validators=[NumberRange(min=0, max=10,
-                                                                          message="Le RPE doit être compris entre 1 et "
-                                                                                  "10.")])
-    one_reps = StringField("Charge sur 1 répétition")
-    one_rpe = IntegerField("1 Répétition RPE", default=0, validators=[NumberRange(min=0, max=10,
-                                                                          message="Le RPE doit être compris entre 1 et "
-                                                                                  "10.")])
-    ten_reps = StringField("Charge sur 10 répétitions")
-    fifteen_reps = StringField("Charge sur 15 répétitions")
-    twenty_reps = StringField("Charge sur 20 répétitions")
-
-    all_data = StringField('Ensemble des performances')
+    all_data = StringField('Ensemble des performances', validators=[DataRequired()])
+    notes = StringField('Notes', validators=[Length(min=0, max=250, message="Les notes ne peuvent pas excéder 250 caractères.")])
+    sleep_time = StringField('Sommeil(heures)')
 
     validate_submit = SubmitField("Valider")
 
