@@ -2,14 +2,30 @@ Graphiques:
 	* https://plotly.com/python/line-charts/
 	* https://plotly.com/python/line-and-scatter/ -> 'Connected Scatterplots'
 	- Graphique (RPE - charge ; 2 ordonnées) en fn de la date
+	- Graphique sleep_time c.f 'intégration du sleep time'
 
-Changement de la prise en compte de nouvelles performances:
-        - Demander ds un premier temps le nombre de séries
-            -> Générer autant d'input en fn du nombre de séries (ainsi 1 input  = ChargeXRépétitions@RPE)
-                -> Le RPE n'a pas pour obligation d'être précisé
-            -> A partir de ces inputs, remplir de façon automatique les colonnes (3 reps, 15 reps, etc.)
+Dashboard:
+    - Actualiser le DF (colonnes notes + sleep time)
 
-Affichage du RPE dans les DF (si celui-ci existe)
+get_workout_details:
+    - Actualiser strength df + endurance df + graphiques associés
+    - strength df : mettre dans l'ordre 1 rep 2 reps 3 reps et ajouter 4 reps 5 reps&+
+    - endurance df : ajouter 25reps&+
+
+advanced_edit:
+    - Actualiser le DF par rapport au nouveau formatage des données
+    edit_performance:
+        - Changer la façon d'éditer les perfs
+            -> Affiche date + perf globale + notes + sleep time
+            -> Même principe qu'avec l'ancien DF pour colonne edit/delete
+            -> Si delete alors penser à bien supprimer la performance_id dans les 2 tables !!
+
+edit_rm/exercice:
+    - Prévoir le fait qu'il n'y ait pas de données et donc afficher une phrase en conséquence
+
+Affichage du RPE dans les DF spécifiques (si celui-ci existe)
+
+Quand on ajoute un nouvel exercice : penser à le passer en .title() avant de l'ajouter dans la db
 
 WILKS page:
     - /!\ Quand on supprime un PR le dernier graph n'est pas MAJ
@@ -36,12 +52,9 @@ Refonte de la page advanced_edit:
 
 Ajout du  Token CSRF pour les form basiques
 
-Ajout d'une performance:
-    - Prévoir l'erreur quand on ajoute un ',' ou un ';' à la place d'un point
-        -> pour un nombre flottant -> erreur quand on affichera la page graphique
-        -> Ne pas oublier de convertir les données en pd.to_numeric()
-
 Envoyer un email lors de l'inscription
+
+Editer le lien des routes (parfois user_id n'est pas nécessaire)
 
 Système d'abonnement premium
     - Accès à la prédiction de données
