@@ -75,9 +75,12 @@ class User(UserMixin, db.Model):
     # Relation with Wilks table:
     wilks = relationship("Wilks", back_populates="wilks_data")
 
+    # Relation with ExerciseDetails table:
+    ex_details = relationship("ExerciseDetails", back_populates="exercise_details_user")
+
 
 class Exercise(db.Model):
-    __tablename__ = "exercise_details"
+    __tablename__ = "exercise_info"
     id = db.Column(db.Integer, primary_key=True)
 
     # ForeignKey User (primary key of User):
@@ -87,9 +90,12 @@ class Exercise(db.Model):
     author = relationship("User", back_populates="exercises")
     performance = relationship("ExercisePerformance", back_populates="exercise")
 
+    # Relation with ExerciseDetails table:
+    ex_details = relationship("ExerciseDetails", back_populates="exercise_global_data")
+
 
 class ExercisePerformance(db.Model):
-    __tablename__ = "exercise_performance"
+    __tablename__ = "exercise_global_performance"
     id = db.Column(db.Integer, primary_key=True, unique=True)
 
     # Relation with User table :
@@ -97,11 +103,16 @@ class ExercisePerformance(db.Model):
     exercise_performance_user = relationship("User", back_populates="performances")
 
     # Relation with Exercise table :
-    exercise_id = db.Column(db.Integer, db.ForeignKey("exercise_details.id"))
+    exercise_id = db.Column(db.Integer, db.ForeignKey("exercise_info.id"))
     exercise = relationship("Exercise", back_populates="performance")
+
+    # Relation with ExerciseDetails table :
+    ex_performance_data = relationship("ExerciseDetails", back_populates="exercise_performance_data")
 
     date_performance = db.Column(db.String(20), nullable=False)
     global_performance = db.Column(db.String(30), nullable=False)
+    notes = db.Column(db.String(250), nullable=True)
+    sleep_time = db.Column(db.Integer, nullable=True)
 
     three_reps = db.Column(db.Integer, nullable=True)
     three_rpe = db.Column(db.Integer, nullable=True)
@@ -112,6 +123,30 @@ class ExercisePerformance(db.Model):
     ten_reps = db.Column(db.Integer, nullable=True)
     fifteen_reps = db.Column(db.Integer, nullable=True)
     twenty_reps = db.Column(db.Integer, nullable=True)
+
+
+class ExerciseDetails(db.Model):
+    __tablename__ = "exercise_details"
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+
+    # Relation with User table:
+    user_id = db.Column(db.Integer, db.ForeignKey("user_info.id"))
+    exercise_details_user = relationship("User", back_populates="ex_details")
+
+    # Relation with Exercise table:
+    exercise_id = db.Column(db.Integer, db.ForeignKey("exercise_info.id"))
+    exercise_global_data = relationship("Exercise", back_populates="ex_details")
+
+    # Relation with ExercisePerformance table:
+    performance_id = db.Column(db.Integer, db.ForeignKey("exercise_global_performance.id"))
+    exercise_performance_data = relationship("ExercisePerformance", back_populates="ex_performance_data")
+
+    # Exercise Details Data :
+    date = db.Column(db.String(20), nullable=False)
+    weight = db.Column(db.Float, nullable=False)
+    repetitions = db.Column(db.Integer, nullable=False)
+    sets = db.Column(db.Integer, nullable=False)
+    rpe = db.Column(db.Integer, nullable=False)
 
 
 class PrDetails(db.Model):
@@ -323,14 +358,17 @@ def get_workout_details(user_id, exercise_id):
                 get_global_performances.append(
                     {
                         'date': perf.date_performance,
-                        'performance': perf.global_performance
+                        'performance': perf.global_performance,
+                        'notes': perf.notes,
+                        'sleep time': perf.sleep_time
                     }
                 )
 
             for perf in get_global_performances:
                 global_df = global_df.append({'Date': perf['date'],
                                               'Performance globale': perf['performance'],
-                                              'Notes': 'notes_desc'},
+                                              'Notes': perf['notes'],
+                                              'Sommeil': perf['sleep time']},
                                              ignore_index=True)
 
             global_df = global_df.sort_values(by='Date', ascending=False)
@@ -427,6 +465,7 @@ def get_workout_details(user_id, exercise_id):
 
         return render_template('workout_details.html',
                                is_logged=current_user.is_authenticated,
+                               title_content="Résumé de vos exercices",
                                exercise_name=get_exercise_name.title(),
                                exercise_id=exercise_id,
                                global_data=global_data,
@@ -447,34 +486,7 @@ def edit_workout(user_id, exercise_id):
     form = EditWorkout()
     if form.validate_on_submit():
 
-        def is_rpe_null(data):
-            """
-            Checking if the RPE is null, in this case RPE column would be empty, otherwise RPE will be
-            taken into account
-            """
-            if data == 0:
-                data = ""
-                return data
-            else:
-                return data
-
-        new_performance = ExercisePerformance(
-            date_performance=form.date_field.data,
-            exercise_performance_user=current_user,
-            exercise=exercise,
-            global_performance=form.global_performance.data,
-            three_reps=form.three_reps.data,
-            three_rpe=is_rpe_null(form.three_rpe.data),
-            two_reps=form.two_reps.data,
-            two_rpe=is_rpe_null(form.two_rpe.data),
-            one_reps=form.one_reps.data,
-            one_rpe=is_rpe_null(form.one_rpe.data),
-            ten_reps=form.ten_reps.data,
-            fifteen_reps=form.fifteen_reps.data,
-            twenty_reps=form.twenty_reps.data,
-        )
-
-        #### Get all performances and organized it
+        # Get all performances and organized it
 
         all_perfs = form.all_data.data.split(',')
         print(f'all_perfs: {all_perfs}')
@@ -487,26 +499,54 @@ def edit_workout(user_id, exercise_id):
                 return redirect(url_for('edit_workout', user_id=current_user.id, exercise_id=exercise_id))
 
             else:
-                organized_perfs[form.date_field.data]['charge'].append(int(all_perfs[n].split('x')[0]))
+                organized_perfs[form.date_field.data]['charge'].append(float(all_perfs[n].split('x')[0]))
                 organized_perfs[form.date_field.data]['sets'].append(int(all_perfs[n].split('x')[1]))
                 organized_perfs[form.date_field.data]['reps'].append(int(all_perfs[n].split('x')[-1].split('@')[0]))
 
-                print(f'split rpe :{all_perfs[n].split("@")}')
-
-                if '@' in all_perfs[n].split("@"):
-                    organized_perfs[form.date_field.data]['rpe'].append(int(all_perfs[n].split('@')[-1]))
+                if '@' in all_perfs[n]:
+                    organized_perfs[form.date_field.data]['rpe'].append(float(all_perfs[n].split('@')[-1]))
                 else:
                     organized_perfs[form.date_field.data]['rpe'].append(0)
 
-        print(organized_perfs)
-        # print(organized_perfs[form.date_field.data]['charge'])
+        # Add performances to database:
 
-        ####
+        # Global performance:
 
+        new_global_performance = ExercisePerformance(
+            date_performance=form.date_field.data,
+            exercise_performance_user=current_user,
+            exercise=exercise,
+            global_performance=form.all_data.data,
+            notes=form.notes.data if len(form.notes.data) > 0 else "-",
+            sleep_time=form.sleep_time.data if len(form.sleep_time.data) > 0 else "-",
+        )
 
-
-        db.session.add(new_performance)
+        db.session.add(new_global_performance)
         db.session.commit()
+
+        # Get performance object corresponding to the performance_id
+        performance = ExercisePerformance.query.filter_by(user_id=current_user.id,
+                                                             date_performance=form.date_field.data,
+                                                             global_performance=form.all_data.data).first()
+
+        # Detailed performance:
+
+        for n in range(len(organized_perfs[form.date_field.data]['charge'])):
+
+            new_performance = ExerciseDetails(
+                exercise_details_user=current_user,
+                exercise_global_data=Exercise.query.get(exercise_id),
+                exercise_performance_data=performance,
+                date=form.date_field.data,
+                weight=organized_perfs[form.date_field.data]['charge'][n],
+                repetitions=organized_perfs[form.date_field.data]['reps'][n],
+                sets=organized_perfs[form.date_field.data]['sets'][n],
+                rpe=organized_perfs[form.date_field.data]['rpe'][n],
+            )
+
+            db.session.add(new_performance)
+            db.session.commit()
+
         flash("Les nouvelles données ont correctement été ajoutées.")
         return redirect(url_for('dashboard'))
 

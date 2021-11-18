@@ -9,7 +9,11 @@
     {% endif %}
 {% endwith %}
 
-
+<p>
+    <i class="far fa-info-circle"> Les performances doivent être sous la forme "Charge<strong>x</strong>NbSéries<strong>x</strong>Nbrépétitions" ou "Charge<strong>x</strong>NbSéries<strong>x</strong>Nbrépétitions<strong>@</strong>RPE" et séparées par une virgule.</i>
+    <br>
+    <em>Par exemple : 120x1x10, 140x1x3@8</em>
+</p>
 {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "primary"}) }}
 </body>
 </html>
