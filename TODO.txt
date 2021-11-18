@@ -4,9 +4,6 @@ Graphiques:
 	- Graphique (RPE - charge ; 2 ordonnées) en fn de la date
 	- Graphique sleep_time c.f 'intégration du sleep time'
 
-Dashboard:
-    - Actualiser le DF (colonnes notes + sleep time)
-
 get_workout_details:
     - Actualiser strength df + endurance df + graphiques associés
     - strength df : mettre dans l'ordre 1 rep 2 reps 3 reps et ajouter 4 reps 5 reps&+
@@ -26,6 +23,17 @@ edit_rm/exercice:
 Affichage du RPE dans les DF spécifiques (si celui-ci existe)
 
 Quand on ajoute un nouvel exercice : penser à le passer en .title() avant de l'ajouter dans la db
+
+Retravailler pr_details table:
+    - Supprimer 'max_squat/deadlift/bench', récupérer le mouvement par le lift_id
+    - Colonne 'weight'
+    - lift_id 0 = squat, 1 = bench, 2 = deadlift
+
+Retravailler pr_details:
+    - Le BW sera initialement enregistré dans la table user_info
+    - Pour chaque nouveau PR, on regardera le BW actuel dans user_info
+    - Quand on change son BW : on change celui de user_info
+        ->  donc la trace de tous les BW sera gardée dans pr_details
 
 WILKS page:
     - /!\ Quand on supprime un PR le dernier graph n'est pas MAJ
