@@ -334,12 +334,12 @@ def get_workout_details(user_id, exercise_id):
 
         # Create global performance DF:
         performances_data = ExercisePerformance.query.filter_by(user_id=current_user.id, exercise_id=exercise_id).all()
+        global_df = dataframe_manager.create_global_df(all_performances=performances_data)
 
         if len(performances_data) == 0:
             global_data = False
         else:
             global_data = True
-            global_df = dataframe_manager.create_global_df(all_performances=performances_data)
 
         # Create strength DF:
         strength_df = dataframe_manager.create_specific_df(
@@ -495,40 +495,52 @@ def edit_workout(user_id, exercise_id):
                            title_content=f"{exercise.exercise_name.title()} : Ajout d'une nouvelle performance")
 
 
-@app.route('/advanced-edit/<int:user_id>/<int:exercise_id>')
+@app.route('/advanced_edit/<int:user_id>/<int:exercise_id>')
 @login_required
 def advanced_edit(user_id, exercise_id):
-    exercise_df = dataframe_manager.create_specific_dataframe(table=Exercise, exercise_id=exercise_id)
-    exercise_df['Editer'] = "Editer"
-    exercise_df['Delete'] = "Supprimer"
-    if len(exercise_df) == 0:
+    all_global_performances = ExercisePerformance.query.filter_by(user_id=current_user.id,
+                                                                  exercise_id=exercise_id)
+
+    df_exercise = dataframe_manager.create_df_for_edit(all_global_performances=all_global_performances)
+
+    if len(df_exercise) == 0:
         has_data = False
     else:
         has_data = True
 
     return render_template("advanced_edit.html",
                            is_logged=current_user.is_authenticated,
-                           column_names=exercise_df.columns.values,
-                           row_data=list(exercise_df.values.tolist()),
+                           column_names=df_exercise.columns.values,
+                           row_data=list(df_exercise.values.tolist()),
                            link_delete="Delete",
                            link_edit="Editer",
+                           link_performance_id="Performance_id",
                            zip=zip,
-                           exercise=dataframe_manager.exercise,
-                           tables=[exercise_df.to_html(classes='data', index=True)],
+                           tables=[df_exercise.to_html(classes='data', index=True)],
                            has_data=has_data,
-                           title_content=f"{dataframe_manager.exercise.exercise_name} : Modification d'une performance")
+                           title_content=f" {all_global_performances[0].exercise.exercise_name} : "
+                                         f"Modification d'une performance")
 
 
 @app.route('/delete_performance/<int:user_id>/<int:performance_id>', methods=['POST', 'GET'])
 @login_required
 def delete_performance(user_id, performance_id):
     if request.method == 'POST':
-        performance_to_delete = ExercisePerformance.query.filter_by(id=performance_id).first()
-        get_exercise_id = performance_to_delete.exercise.id
-        db.session.delete(performance_to_delete)
+        # Delete detailed performances:
+        all_detailed_performances = ExerciseDetails.query.filter_by(performance_id=performance_id).all()
+        for detailed_perf in all_detailed_performances:
+            db.session.delete(detailed_perf)
+        db.session.commit()
+
+        # Delete global performance:
+        global_performance_to_delete = ExercisePerformance.query.filter_by(id=performance_id).first()
+        get_exercise_id = global_performance_to_delete.exercise.id
+        db.session.delete(global_performance_to_delete)
         db.session.commit()
         flash('Les données ont correctement été supprimées.')
+
         return redirect(url_for('advanced_edit', exercise_id=get_exercise_id, user_id=current_user.id))
+
     return redirect(url_for('dashboard'))
 
 
@@ -545,26 +557,20 @@ def edit_performance(user_id, performance_id):
 @app.route('/new_edit_performance/<int:user_id>/<int:performance_id>', methods=['POST'])
 @login_required
 def get_edit_performance(user_id, performance_id):
-    print(performance_id)
     new_date_performance = request.form['date_performance']
     new_global_performance = request.form['global_performance']
-    new_three_reps = request.form['three_reps']
-    new_two_reps = request.form['two_reps']
-    new_one_reps = request.form['one_reps']
-    new_ten_reps = request.form['ten_reps']
-    new_fifteen_reps = request.form['fifteen_reps']
-    new_twenty_reps = request.form['twenty_reps']
+    new_notes = request.form['notes']
+    new_sleep_time = request.form['sleep_time']
 
+    # Update global performance:
     performance_to_update = ExercisePerformance.query.get(performance_id)
     performance_to_update.date_performance = new_date_performance
     performance_to_update.global_performance = new_global_performance
-    performance_to_update.three_reps = new_three_reps
-    performance_to_update.two_reps = new_two_reps
-    performance_to_update.one_reps = new_one_reps
-    performance_to_update.ten_reps = new_ten_reps
-    performance_to_update.fifteen_reps = new_fifteen_reps
-    performance_to_update.twenty_reps = new_twenty_reps
-    db.session.commit()
+    performance_to_update.notes = new_notes
+    performance_to_update.sleep_time = new_sleep_time
+
+    # Update detailed performances:
+
     flash('Les données ont correctement été modifiées.')
 
     return redirect(url_for('advanced_edit', exercise_id=performance_to_update.exercise.id, user_id=current_user.id))

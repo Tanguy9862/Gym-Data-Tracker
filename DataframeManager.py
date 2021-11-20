@@ -94,40 +94,22 @@ class DataframeManager:
 
         return df.sort_values(by='Date', ascending=False)
 
+    def create_df_for_edit(self, all_global_performances):
+        df_exercise = pd.DataFrame(columns=['Performance_id', 'Date', 'Performance globale', 'Notes', 'Sommeil'])
+        for perf in all_global_performances:
+            df_exercise = df_exercise.append({
+                'Performance_id': perf.id,
+                'Date': perf.date_performance,
+                'Performance globale': perf.global_performance,
+                'Notes': perf.notes,
+                'Sommeil': perf.sleep_time
+            }, ignore_index=True)
 
-    ###############################
-    def create_specific_dataframe(self, table, exercise_id): # à refaire
-        self.exercise = table.query.get(exercise_id)
+        df_exercise = df_exercise.sort_values(by='Date', ascending=False)
+        df_exercise['Editer'] = "Editer"
+        df_exercise['Delete'] = "Supprimer"
 
-        new_df = pd.DataFrame(
-            {
-                'performance_id': [],
-                'Date': [],
-                'Performance globale': [],
-                'x3@RPE': [],
-                'x2@RPE': [],
-                'x1@RPE': [],
-                'x10': [],
-                'x15': [],
-                'x20': [],
-            }
-        )
-
-        for n in range(len(self.exercise.performance)):
-            new_row = {
-                "performance_id": str(self.exercise.performance[n].id).split(".")[0],
-                "Date": self.exercise.performance[n].date_performance,
-                "Performance globale": self.exercise.performance[n].global_performance,
-                "x3@RPE": f"{self.exercise.performance[n].three_reps}@{self.exercise.performance[n].three_rpe}",
-                "x2@RPE": f"{self.exercise.performance[n].two_reps}@{self.exercise.performance[n].two_rpe}",
-                "x1@RPE": f"{self.exercise.performance[n].one_reps}@{self.exercise.performance[n].one_rpe}",
-                "x10": self.exercise.performance[n].ten_reps,
-                "x15": self.exercise.performance[n].fifteen_reps,
-                "x20": self.exercise.performance[n].twenty_reps
-            }
-            new_df = new_df.append(new_row, ignore_index=True)
-
-        return new_df
+        return df_exercise
 
 
 

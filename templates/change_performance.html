@@ -1,15 +1,10 @@
 {% include "header.html" %}
-{% import "bootstrap/wtf.html" as wtf %}
 
 <form action="{{url_for('get_edit_performance', user_id=current_user.id, performance_id=performance_data.id)}}" method="post">
     <input type="text" name="date_performance" value="{{performance_data.date_performance}}">
     <input type="text" name="global_performance" value="{{performance_data.global_performance}}">
-    <input type="text" name="three_reps" value="{{performance_data.three_reps}}">
-    <input type="text" name="two_reps" value="{{performance_data.two_reps}}">
-    <input type="text" name="one_reps" value="{{performance_data.one_reps}}">
-    <input type="text" name="ten_reps" value="{{performance_data.ten_reps}}">
-    <input type="text" name="fifteen_reps" value="{{performance_data.fifteen_reps}}">
-    <input type="text" name="twenty_reps" value="{{performance_data.twenty_reps}}">
+    <input type="text" name="notes" value="{{performance_data.notes}}">
+    <input type="text" name="sleep_time" value="{{performance_data.sleep_time}}">
     <input type="submit" value="Valider">
 </form>
 
