@@ -11,6 +11,7 @@ advanced_edit:
             -> Affiche date + perf globale + notes + sleep time
             -> Même principe qu'avec l'ancien DF pour colonne edit/delete
             -> Si delete alors penser à bien supprimer la performance_id dans les 2 tables !!
+            -> terminer get_edit_performance
 
 edit_rm/exercice:
     - Prévoir le fait qu'il n'y ait pas de données et donc afficher une phrase en conséquence
@@ -53,7 +54,12 @@ Refonte de la page advanced_edit:
     -> + Mettre dans l'ordre chronologique la date des perfs
     -> Pouvoir modifier le RPE
 
-Ajout du  Token CSRF pour les form basiques
+Ajout du  Token CSRF pour les form basiques:
+    -> edit_performance
+    -> login
+
+Intégration des échecs ?
+    -> Par exemple 5 reps à X kg au lieu de n reps prévues initialement
 
 Envoyer un email lors de l'inscription
 
