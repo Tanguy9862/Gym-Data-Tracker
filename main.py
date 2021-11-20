@@ -327,7 +327,6 @@ def show_workout(user_id):
 @app.route('/get_workout_details/<int:user_id>/<int:exercise_id>')
 @login_required
 def get_workout_details(user_id, exercise_id):
-
     if user_id != current_user.id:
         abort(404)
     else:
@@ -374,94 +373,111 @@ def get_workout_details(user_id, exercise_id):
             global_df = global_df.sort_values(by='Date', ascending=False)
 
         # Create strength DF:
-        strength_df = pd.DataFrame(columns=['Date', '3 répétitions', '2 répétitions', '1 répétition'])
+        strength_df = pd.DataFrame(columns=['Date', '1 répétition', '2 répétitions', '3 répétitions', '4 répétitions',
+                                            '5 répétitions', '6 répétitions'])
 
-        get_strength_performance = []
+        for perf in ExerciseDetails.query.filter_by(user_id=current_user.id,
+                                                    exercise_id=exercise_id).all():
 
-        for perf in ExercisePerformance.query.filter_by(user_id=current_user.id, exercise_id=exercise_id).all():
-            if perf.three_reps != "" or perf.two_reps != "" or perf.one_reps != "":
-                get_strength_performance.append({
-                    'date': perf.date_performance,
-                    'x3': perf.three_reps if perf.three_reps != "" else "-",
-                    'x2': perf.two_reps if perf.two_reps != "" else "-",
-                    'x1': perf.one_reps if perf.one_reps != "" else "-",
-                })
+            if perf.repetitions <= 6:
+                strength_df = strength_df.append({
+                    'Date': perf.date,
+                    '1 répétition': perf.weight if perf.repetitions == 1 else 0,
+                    '2 répétitions': perf.weight if perf.repetitions == 2 else 0,
+                    '3 répétitions': perf.weight if perf.repetitions == 3 else 0,
+                    '4 répétitions': perf.weight if perf.repetitions == 4 else 0,
+                    '5 répétitions': perf.weight if perf.repetitions == 5 else 0,
+                    '6 répétitions': perf.weight if perf.repetitions == 6 else 0,
 
-        if len(get_strength_performance) == 0:
-            strength_data = False
-            graphJSON_1 = None
+                }, ignore_index=True)
 
-        else:
-            strength_data = True
+        strength_df = strength_df.groupby('Date').max().reset_index().replace(to_replace=0, value='-')
+        strength_df = strength_df.sort_values(by='Date', ascending=False)
 
-            for strength_perf in get_strength_performance:
-                strength_df = strength_df.append({'Date': strength_perf['date'],
-                                                  '3 répétitions': strength_perf['x3'],
-                                                  '2 répétitions': strength_perf['x2'],
-                                                  '1 répétition': strength_perf['x1']},
-                                                 ignore_index=True)
+        # Generate DF for plotting:
+        df_exercise = pd.DataFrame(columns=['Date', 'Charge', 'Répétitions'])
 
-            strength_df = strength_df.sort_values(by='Date', ascending=False)
+        for index, row in strength_df.iterrows():
+            if row['6 répétitions'] != "-":
+                df_exercise = df_exercise.append({
+                    'Date': row['Date'],
+                    'Charge': row['6 répétitions'],
+                    'Répétitions': 6
+                }, ignore_index=True)
+            if row['5 répétitions'] != "-":
+                df_exercise = df_exercise.append({
+                    'Date': row['Date'],
+                    'Charge': row['5 répétitions'],
+                    'Répétitions': 5
+                }, ignore_index=True)
+            if row['4 répétitions'] != "-":
+                df_exercise = df_exercise.append({
+                    'Date': row['Date'],
+                    'Charge': row['4 répétitions'],
+                    'Répétitions': 4
+                }, ignore_index=True)
+            if row['3 répétitions'] != "-":
+                df_exercise = df_exercise.append({
+                    'Date': row['Date'],
+                    'Charge': row['3 répétitions'],
+                    'Répétitions': 3
+                }, ignore_index=True)
+            if row['2 répétitions'] != "-":
+                df_exercise = df_exercise.append({
+                    'Date': row['Date'],
+                    'Charge': row['2 répétitions'],
+                    'Répétitions': 2
+                }, ignore_index=True)
+            if row['1 répétition'] != "-":
+                df_exercise = df_exercise.append({
+                    'Date': row['Date'],
+                    'Charge': row['1 répétition'],
+                    'Répétitions': 1
+                }, ignore_index=True)
 
-            # Generate DF for plotting strength data:
-            df_exercise = dataframe_manager.generate_strength_df_for_plot(
-                all_performances_current_exercise=get_all_performances_by_id(exercise_id, current_user.id)
-            )
+        df_exercise = df_exercise.sort_values(by='Date', ascending=False)
 
-            graphJSON_1 = plot_function.line_plot(
-                df_exercise,
-                x='Date',
-                y='Charge',
-                text=None,
-                xaxis_title='Date',
-                yaxis_title='Charge (en Kg)',
-                color_column='Répétitions',
-                title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Force"
-            )
+        graphJSON_1 = plot_function.line_plot(
+            df_exercise,
+            x='Date',
+            y='Charge',
+            text=None,
+            xaxis_title='Date',
+            yaxis_title='Charge (en Kg)',
+            color_column='Répétitions',
+            title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Force"
+        )
 
         # Create endurance DF:
         endurance_df = pd.DataFrame(columns=['Date', '10 répétitions', '15 répétitions', '20 répétitions'])
 
-        get_endurance_performance = []
+        for perf in ExerciseDetails.query.filter_by(user_id=current_user.id,
+                                                    exercise_id=exercise_id).all():
+            if perf.repetitions >= 10 <= 20:
+                endurance_df = endurance_df.append({
+                    'Date': perf.date,
+                    '10 répétitions': perf.weight if perf.repetitions == 10 else "-",
+                    '15 répétitions': perf.weight if perf.repetitions == 15 else "-",
+                    '20 répétitions': perf.weight if perf.repetitions == 20 else "-"
+                }, ignore_index=True)
 
-        for perf in ExercisePerformance.query.filter_by(user_id=current_user.id, exercise_id=exercise_id).all():
-            if perf.ten_reps != "" or perf.fifteen_reps != "" or perf.twenty_reps != "":
-                get_endurance_performance.append({
-                    'date': perf.date_performance,
-                    'x10': perf.ten_reps if perf.ten_reps != "" else "-",
-                    'x15': perf.fifteen_reps if perf.fifteen_reps != "" else "-",
-                    'x20': perf.twenty_reps if perf.twenty_reps != "" else "-",
-                })
+        endurance_df = endurance_df.sort_values(by='Date', ascending=False)
 
-        if len(get_endurance_performance) == 0:
-            endurance_data = False
-            graphJSON_2 = None
-        else:
-            endurance_data = True
-            for endurance_perf in get_endurance_performance:
-                endurance_df = endurance_df.append({'Date': endurance_perf['date'],
-                                                  '10 répétitions': endurance_perf['x10'],
-                                                  '15 répétitions': endurance_perf['x15'],
-                                                  '20 répétitions': endurance_perf['x20']},
-                                                 ignore_index=True)
-
-            endurance_df = endurance_df.sort_values(by='Date', ascending=False)
-
-            # Generate DF for plotting endurance data:
-            df_exercise = dataframe_manager.generate_endurance_df_for_plot(
-                all_performances_current_exercise=get_all_performances_by_id(exercise_id, current_user.id)
-            )
-
-            graphJSON_2 = plot_function.line_plot(
-                df_exercise,
-                x='Date',
-                y='Charge',
-                text=None,
-                yaxis_title='Charge (en Kg)',
-                xaxis_title='Date',
-                color_column='Répétitions',
-                title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Endurance"
-            )
+        # Generate DF for plotting endurance data:
+        # df_exercise = dataframe_manager.generate_endurance_df_for_plot(
+        #     all_performances_current_exercise=get_all_performances_by_id(exercise_id, current_user.id)
+        # )
+        #
+        # graphJSON_2 = plot_function.line_plot(
+        #     df_exercise,
+        #     x='Date',
+        #     y='Charge',
+        #     text=None,
+        #     yaxis_title='Charge (en Kg)',
+        #     xaxis_title='Date',
+        #     color_column='Répétitions',
+        #     title=f"{Exercise.query.filter_by(id=exercise_id).first().exercise_name.title()} - axé Endurance"
+        # )
 
         return render_template('workout_details.html',
                                is_logged=current_user.is_authenticated,
@@ -470,12 +486,12 @@ def get_workout_details(user_id, exercise_id):
                                exercise_id=exercise_id,
                                global_data=global_data,
                                performance_tables=[global_df.to_html(classes='data', index=False)],
-                               strength_data=strength_data,
+                               # strength_data=strength_data,
                                strength_tables = [strength_df.to_html(classes='data', index=False)],
-                               endurance_data=endurance_data,
+                               # endurance_data=endurance_data,
                                endurance_tables=[endurance_df.to_html(classes='data', index=False)],
                                graphJSON_1=graphJSON_1,
-                               graphJSON_2=graphJSON_2
+                               # graphJSON_2=graphJSON_2
                                )
 
 
@@ -669,7 +685,6 @@ def search_user():
 @login_required
 def show_user(username):
     get_user_info = User.query.filter_by(username=username).first()
-    print('lol')
     get_user_performance = ExercisePerformance.query.filter_by(user_id=get_user_info.id).all()
     df_exercise_performance = dataframe_manager.create_global_dataframe(table=ExercisePerformance,
                                                                         user_id=get_user_info.id).sort_values(
