@@ -4,11 +4,6 @@ Graphiques:
 	- Graphique (RPE - charge ; 2 ordonnées) en fn de la date
 	- Graphique sleep_time c.f 'intégration du sleep time'
 
-get_workout_details:
-    - Actualiser strength df + endurance df + graphiques associés
-    - strength df : mettre dans l'ordre 1 rep 2 reps 3 reps et ajouter 4 reps 5 reps&+
-    - endurance df : ajouter 25reps&+
-
 advanced_edit:
     - Actualiser le DF par rapport au nouveau formatage des données
     edit_performance:
