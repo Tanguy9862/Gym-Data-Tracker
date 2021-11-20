@@ -6,7 +6,7 @@ class DataframeManager:
     def __init__(self):
         pass
 
-    def create_global_dataframe(self, table, user_id):
+    def create_dashboard_df(self, table, user_id):
 
         all_exercises_performances = table.query.filter_by(user_id=user_id).all()
 
@@ -22,10 +22,81 @@ class DataframeManager:
                 "Sommeil": exercise_performance.sleep_time
             }
             df_global_exercise_performance = df_global_exercise_performance.append(new_row, ignore_index=True)
+
         return df_global_exercise_performance
 
+    def create_global_df(self, all_performances):
+        df = pd.DataFrame(columns=['Date', 'Performance globale', 'Notes'])
 
-    def create_specific_dataframe(self, table, exercise_id):
+        for perf in all_performances:
+            df = df.append({'Date': perf.date_performance,
+                                          'Performance globale': perf.global_performance,
+                                          'Notes': perf.notes,
+                                          'Sommeil': perf.sleep_time},
+                                         ignore_index=True)
+
+        return df.sort_values(by='Date', ascending=False)
+
+    def create_specific_df(self, highest_reps, all_performances, reps_range):
+        """
+        :param highest_reps: Highest value of repetition
+        :param all_performances: List object of all_performances for an exercise
+        :param reps_range: Min repetitions to max repetitions
+        :return: Pandas DataFrame
+        """
+        df = pd.DataFrame(columns=['Date'])
+
+        for reps in reps_range:
+            if reps == 1:
+                df[f'{reps} répétition'] = ""
+            else:
+                df[f'{reps} répétitions'] = ""
+
+        for perf in all_performances:
+
+            if perf.repetitions <= highest_reps:
+                for reps in reps_range:
+                    if reps == perf.repetitions and reps == 1:
+                        df = df.append({
+                            'Date': perf.date,
+                            f'{reps} répétition': perf.weight
+                        }, ignore_index=True)
+                    elif reps == perf.repetitions and reps != 1:
+                        df = df.append({
+                            'Date': perf.date,
+                            f'{reps} répétitions': perf.weight
+                        }, ignore_index=True)
+
+        df = df.fillna(0)
+        df = df.groupby('Date').max().reset_index().replace(to_replace=0, value='-')
+
+        return df.sort_values(by='Date', ascending=False)
+
+    def create_df_for_plot(self, data_df, reps_range):
+        df = pd.DataFrame(columns=['Date', 'Charge', 'Répétitions'])
+
+        for index, row in data_df.iterrows():
+            for reps in reps_range:
+                if reps == 1:
+                    if row[f'{reps} répétition'] != "-":
+                        df = df.append({
+                            'Date': row['Date'],
+                            'Charge': row[f'{reps} répétition'],
+                            'Répétitions': reps
+                        }, ignore_index=True)
+                else:
+                    if row[f'{reps} répétitions'] != "-":
+                        df = df.append({
+                            'Date': row['Date'],
+                            'Charge': row[f'{reps} répétitions'],
+                            'Répétitions': reps
+                        }, ignore_index=True)
+
+        return df.sort_values(by='Date', ascending=False)
+
+
+    ###############################
+    def create_specific_dataframe(self, table, exercise_id): # à refaire
         self.exercise = table.query.get(exercise_id)
 
         new_df = pd.DataFrame(
@@ -58,65 +129,5 @@ class DataframeManager:
 
         return new_df
 
-    def generate_strength_df_for_plot(self, all_performances_current_exercise):
-
-        print(all_performances_current_exercise)
-
-        # Create a DataFrame
-        df_exercise = pd.DataFrame(columns=['Date', 'Charge', 'Répétitions'])
-
-        # Add data to the df_exercise DataFrame
-        for performance in all_performances_current_exercise:
-            if performance.three_reps != "":
-                df_exercise = df_exercise.append({'Date': performance.date_performance,
-                                                  'Charge': performance.three_reps,
-                                                  'Répétitions': 3}, ignore_index=True)
-            if performance.two_reps != "":
-                df_exercise = df_exercise.append({'Date': performance.date_performance,
-                                                  'Charge': performance.two_reps,
-                                                  'Répétitions': 2}, ignore_index=True)
-            if performance.one_reps != "":
-                df_exercise = df_exercise.append({'Date': performance.date_performance,
-                                                  'Charge': performance.one_reps,
-                                                  'Répétitions': 1}, ignore_index=True)
-
-
-        # Convert columns to respected dtypes
-        df_exercise['Date'] = pd.to_datetime(arg=df_exercise['Date'], format='%Y/%m/%d')
-        df_exercise['Charge'] = pd.to_numeric(arg=df_exercise['Charge'])
-        df_exercise['Répétitions'] = pd.to_numeric(arg=df_exercise['Répétitions'])
-
-        return df_exercise
-
-    def generate_endurance_df_for_plot(self, all_performances_current_exercise):
-
-        print(all_performances_current_exercise)
-
-        # Create a DataFrame
-        df_exercise = pd.DataFrame(columns=['Date', 'Charge', 'Répétitions'])
-
-        # Add data to the df_exercise DataFrame
-        for performance in all_performances_current_exercise:
-            if performance.twenty_reps != "":
-                df_exercise = df_exercise.append({'Date': performance.date_performance,
-                                                  'Charge': performance.twenty_reps,
-                                                  'Répétitions': 20}, ignore_index=True)
-            if performance.fifteen_reps != "":
-                df_exercise = df_exercise.append({'Date': performance.date_performance,
-                                                  'Charge': performance.fifteen_reps,
-                                                  'Répétitions': 15}, ignore_index=True)
-
-            if performance.ten_reps != "":
-                df_exercise = df_exercise.append({'Date': performance.date_performance,
-                                                  'Charge': performance.ten_reps,
-                                                  'Répétitions': 10}, ignore_index=True)
-
-
-        # Convert columns to respected dtypes
-        df_exercise['Date'] = pd.to_datetime(arg=df_exercise['Date'], format='%Y/%m/%d')
-        df_exercise['Charge'] = pd.to_numeric(arg=df_exercise['Charge'])
-        df_exercise['Répétitions'] = pd.to_numeric(arg=df_exercise['Répétitions'])
-
-        return df_exercise
 
 
