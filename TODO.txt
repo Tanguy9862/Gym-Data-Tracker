@@ -4,17 +4,8 @@ Graphiques:
 	- Graphique (RPE - charge ; 2 ordonnées) en fn de la date
 	- Graphique sleep_time c.f 'intégration du sleep time'
 
-advanced_edit:
-    - Actualiser le DF par rapport au nouveau formatage des données
-    edit_performance:
-        - Changer la façon d'éditer les perfs
-            -> Affiche date + perf globale + notes + sleep time
-            -> Même principe qu'avec l'ancien DF pour colonne edit/delete
-            -> Si delete alors penser à bien supprimer la performance_id dans les 2 tables !!
-            -> terminer get_edit_performance
-
-edit_rm/exercice:
-    - Prévoir le fait qu'il n'y ait pas de données et donc afficher une phrase en conséquence
+Page WILKS:
+    - erreur quand on essaye de charger la page sans avoir enregistré de données
 
 Affichage du RPE dans les DF spécifiques (si celui-ci existe)
 
@@ -49,10 +40,6 @@ Page paramètres:
     - Résilier son abonnement premium
 
 Empêcher le fait d'ajouter un exercice si l'utilisateur en a déjà ajouté un du même nom auparavant
-
-Refonte de la page advanced_edit:
-    -> + Mettre dans l'ordre chronologique la date des perfs
-    -> Pouvoir modifier le RPE
 
 Ajout du  Token CSRF pour les form basiques:
     -> edit_performance
