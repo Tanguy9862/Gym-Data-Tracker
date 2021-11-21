@@ -502,6 +502,7 @@ def advanced_edit(user_id, exercise_id):
                                                                   exercise_id=exercise_id)
 
     df_exercise = dataframe_manager.create_df_for_edit(all_global_performances=all_global_performances)
+    exercise_title = Exercise.query.filter_by(user_id=current_user.id, id=exercise_id).first().exercise_name
 
     if len(df_exercise) == 0:
         has_data = False
@@ -518,8 +519,7 @@ def advanced_edit(user_id, exercise_id):
                            zip=zip,
                            tables=[df_exercise.to_html(classes='data', index=True)],
                            has_data=has_data,
-                           title_content=f" {all_global_performances[0].exercise.exercise_name} : "
-                                         f"Modification d'une performance")
+                           title_content=f"{exercise_title} : Modification d'une performance")
 
 
 @app.route('/delete_performance/<int:user_id>/<int:performance_id>', methods=['POST', 'GET'])
@@ -569,7 +569,37 @@ def get_edit_performance(user_id, performance_id):
     performance_to_update.notes = new_notes
     performance_to_update.sleep_time = new_sleep_time
 
+    db.session.commit()
+
     # Update detailed performances:
+    all_detailed_perf = ExerciseDetails.query.filter_by(user_id=current_user.id,
+                                                        performance_id=performance_id).all()
+    for perf in all_detailed_perf:
+        db.session.delete(perf)
+    db.session.commit()
+
+    all_new_perf = ExercisePerformance.query.filter_by(id=performance_id, user_id=current_user.id).first()
+
+    performance = ExercisePerformance.query.filter_by(user_id=current_user.id,
+                                                      date_performance=all_new_perf.date_performance,
+                                                      global_performance=all_new_perf.global_performance).first()
+
+    for global_perf in all_new_perf.global_performance.split(','):
+
+        new_performance = ExerciseDetails(
+            exercise_details_user=current_user,
+            exercise_global_data=Exercise.query.get(all_new_perf.exercise_id),
+            exercise_performance_data=performance,
+            date=all_new_perf.date_performance,
+            weight=global_perf.split('x')[0],
+            repetitions=global_perf.split('x')[2] if not '@' in global_perf.split('x')[2]
+            else global_perf.split('x')[2].split('@')[0],
+            sets=global_perf.split('x')[1],
+            rpe=0 if not '@' in global_perf.split('x')[2] else global_perf.split('x')[2].split('@')[1],
+        )
+
+        db.session.add(new_performance)
+        db.session.commit()
 
     flash('Les données ont correctement été modifiées.')
 
@@ -617,7 +647,7 @@ def search_user():
 def show_user(username):
     get_user_info = User.query.filter_by(username=username).first()
     get_user_performance = ExercisePerformance.query.filter_by(user_id=get_user_info.id).all()
-    df_exercise_performance = dataframe_manager.create_global_dataframe(table=ExercisePerformance,
+    df_exercise_performance = dataframe_manager.create_dashboard_df(table=ExercisePerformance,
                                                                         user_id=get_user_info.id).sort_values(
         by="Date",
         ascending=False
@@ -856,10 +886,12 @@ def edit_rm(user_id, exercise_name):
             break
 
     if not has_bw_data:
-        flash("Pour ajouter vos records personnels, vous devez d'abord renseigner votre poids du corps dans vos paramètres.")
+        flash("Pour ajouter vos records personnels, vous devez d'abord renseigner "
+              "votre poids du corps dans vos paramètres.")
         return render_template('edit_rm.html',
                                is_logged=current_user.is_authenticated,
                                has_bw_data=False,
+                               exercise_name=exercise_name,
                                title_content=f"Ajout d'un nouveau record personnel pour le {exercise_name}")
     else:
         # Add new PR:
