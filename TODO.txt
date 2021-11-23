@@ -9,8 +9,6 @@ Page WILKS:
 
 Affichage du RPE dans les DF spécifiques (si celui-ci existe)
 
-Quand on ajoute un nouvel exercice : penser à le passer en .title() avant de l'ajouter dans la db
-
 Retravailler pr_details table:
     - Supprimer 'max_squat/deadlift/bench', récupérer le mouvement par le lift_id
     - Colonne 'weight'
