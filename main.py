@@ -291,7 +291,7 @@ def add_new_exercise(user_id):
             abort(404)
         else:
             new_exercise = Exercise(
-                exercise_name=form.exercise_name.data,
+                exercise_name=form.exercise_name.data.title(),
                 author=current_user
             )
             db.session.add(new_exercise)
