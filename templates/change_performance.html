@@ -1,12 +1,16 @@
 {% include "header.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
 
-<form action="{{url_for('get_edit_performance', user_id=current_user.id, performance_id=performance_data.id)}}" method="post">
-    <input type="text" name="date_performance" value="{{performance_data.date_performance}}">
-    <input type="text" name="global_performance" value="{{performance_data.global_performance}}">
-    <input type="text" name="notes" value="{{performance_data.notes}}">
-    <input type="text" name="sleep_time" value="{{performance_data.sleep_time}}">
-    <input type="submit" value="Valider">
-</form>
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <p><i class="far fa-info-circle"></i> {{ message }}</p>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+{{ wtf.quick_form(form, novalidate=True) }}
 
 </body>
 </html>

@@ -1,0 +1,17 @@
+{% include "header.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+<a href="{{url_for('get_workout_details', user_id=current_user.id, exercise_id=cycle.exercise_id)}}">Retour</a>
+
+{% if has_active_cycle %}
+    {{ wtf.quick_form(form, novalidate=True) }}
+{% else %}
+    <p><i class="far fa-info-circle"></i> Ce cycle a été terminé le {{cycle.ending_date}}</p>
+{% endif %}
+
+<h4>Moyenne d'heures de sommeil : {{average_sleep}}</h4>
+<h4>Moyenne RPE : {{average_rpe}}</h4>
+<h4>Charge moyenne : {{average_weight}}</h4>
+
+</body>
+</html>

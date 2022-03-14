@@ -20,20 +20,6 @@ class GetUserData:
                     date_model = datetime.strptime(f'{wilks.date}', '%Y-%m-%d')
         return last_bw
 
-    def get_highest_pr(self, list_pr, lift_id):
-        max_lift = 0
-        for pr in list_pr:
-            if lift_id == 1:
-                if pr.max_squat > max_lift:
-                    max_lift = pr.max_squat
-            elif lift_id == 2:
-                if pr.max_bench > max_lift:
-                    max_lift = pr.max_bench
-            elif lift_id == 3:
-                if pr.max_deadlift > max_lift:
-                    max_lift = pr.max_deadlift
-        return max_lift
-
     def get_last_date_last_pr(self, index, table, user_id, df):
         """
         Get the last date of the last PR
@@ -42,17 +28,69 @@ class GetUserData:
         """
 
         squat_date = table.query.filter_by(user_id=user_id,
-                                               max_squat=df['Squat'].iloc[index]).first().date
+                                               weight=df['Squat'].iloc[index]).first().date
         bench_date = table.query.filter_by(user_id=user_id,
-                                               max_bench=df['Bench'].iloc[index]).first().date
+                                               weight=df['Bench'].iloc[index]).first().date
         deadlift_date = table.query.filter_by(user_id=user_id,
-                                                  max_deadlift=df['Deadlift'].iloc[index]).first().date
+                                                  weight=df['Deadlift'].iloc[index]).first().date
 
         all_dates = [datetime.strptime(f'{squat_date}', '%Y-%m-%d'),
                      datetime.strptime(f'{bench_date}', '%Y-%m-%d'),
                      datetime.strptime(f'{deadlift_date}', '%Y-%m-%d')]
 
         return max(all_dates)
+
+    def check_format_of_data(self, all_perfs):
+        """
+        Checking if the data of global performance passed by the user is correctly formatted
+        :param all_perfs: List of global performance
+        :return: Boolean
+        """
+
+        for n in range(len(all_perfs)):
+            split_perf = all_perfs[n].split('x')
+            if len(split_perf) != 3 and len(split_perf) != 2:
+                return False
+            else:
+                for value in split_perf:
+                    if '@' not in value:
+                        try:
+                            float(value)
+                        except ValueError:
+                            return False
+                    else:
+                        new_value = value.split('@')
+                        for _ in new_value:
+                            try:
+                                float(_)
+                            except ValueError:
+                                return False
+        return True
+
+    def check_format_of_rpe(self, all_perfs):
+        """
+        Checking if the RPE is correctly formatted and in a range of 1 to 10
+        :param all_perfs: List of global performance
+        :return: Boolean
+        """
+
+        for perf in all_perfs:
+            if '@' in perf:
+                current_rpe = perf.split('@')
+                if float(current_rpe[1]) < 1 or float(current_rpe[1]) > 10:
+                    return False
+        return True
+
+    def check_format_of_sleep_time(self, sleep_time_data):
+
+        try:
+            current_sleep = datetime.strptime(f'{sleep_time_data.lower()}', '%H:%M').strftime('%H:%M')
+        except ValueError:
+            return False
+        else:
+            return current_sleep
+
+
 
 
 

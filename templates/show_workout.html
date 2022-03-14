@@ -15,9 +15,9 @@
         {% for exercise in all_exercises %}
             <li><a href="{{url_for('get_workout_details', user_id=current_user.id, exercise_id=exercise)}}">{{all_exercises[exercise]}}</a></li>
         {% endfor %}
-        <li><a href="{{url_for('add_new_exercise', user_id=current_user.id)}}">+</a></li>
+        <li><a href="{{url_for('add_new_exercise')}}">+</a></li>
     {% else %}
-        <li><a href="{{url_for('add_new_exercise', user_id=current_user.id)}}">+ Ajouter un nouvel exercice</a></li>
+        <li><a href="{{url_for('add_new_exercise')}}">+ Ajouter un nouvel exercice</a></li>
     {% endif %}
 </ul>
 

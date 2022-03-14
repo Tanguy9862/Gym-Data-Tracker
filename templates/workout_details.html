@@ -1,21 +1,47 @@
 {% include "header.html" %}
 
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <p><i class="far fa-check-circle"></i> {{ message }}</p>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
 <h3>{{exercise_name}} - Performances globales</h3>
 {% if not global_data %}
     <p>Vous n'avez pas encore ajouté de données concernant cet exercice.</p>
 {% else %}
+    <div id="left_side" style="float:left;">
     {% for table in performance_tables %}
         {{ table|safe }}
     {% endfor %}
+    </div>
+
+    <div id="right_side" style="float:right;">
+            <div id="chart_3"></div>
+            <script type='text/javascript'>
+              var graphs = {{graphJSON_3 | safe}};
+              Plotly.plot('chart_3',graphs,{});
+            </script>
+
+            <div id="chart_4"></div>
+                <script type='text/javascript'>
+                  var graphs = {{graphJSON_4 | safe}};
+                  Plotly.plot('chart_4',graphs,{});
+                </script>
+    </div>
+
+
 {% endif %}
 
 <a href="{{url_for('edit_workout', user_id=current_user.id, exercise_id=exercise_id)}}">Ajout</a>
+<a href="{{url_for('delete_workout', user_id=current_user.id, exercise_id=exercise_id)}}">Supprimer l'exercice</a>
 {% if global_data %}
     <a href="{{url_for('advanced_edit', user_id=current_user.id, exercise_id=exercise_id)}}">Edit</a>
 {% endif %}
 
-<hr>
-
+<div id="left_side" style="margin-top:400px; float:left;">
 <h3>{{exercise_name}} - Performances axées sur la force</h3>
 {% if not strength_data %}
     <p>Vous n'avez pas encore ajouté de données concernant cet axe.</p>
@@ -23,36 +49,71 @@
     {% for table in strength_tables %}
         {{ table|safe }}
     {% endfor %}
+</div>
 
-    <div id="chart_1"></div>
-    <script type='text/javascript'>
-      var graphs = {{graphJSON_1 | safe}};
-      Plotly.plot('chart_1',graphs,{});
-    </script>
+    <div id="right_side" style="margin-top:20px; float:right;">
+        <div id="chart_1"></div>
+        <script type='text/javascript'>
+          var graphs = {{graphJSON_1 | safe}};
+          Plotly.plot('chart_1',graphs,{});
+        </script>
+    </div>
 {% endif %}
 
-<hr>
 
-<h3>{{exercise_name}} - Performances axées sur l'endurance</h3>
-{% if not endurance_data %}
-    <p>Vous n'avez pas encore ajouté de données concernant cet axe.</p>
-{% else %}
-    {% for table in endurance_tables %}
-        {{ table|safe }}
-    {% endfor %}
+<div id="left_side" style="margin-top:20px; float:left;">
+    <h3>{{exercise_name}} - Performances axées sur l'endurance</h3>
+    {% if not endurance_data %}
+        <p>Vous n'avez pas encore ajouté de données concernant cet axe.</p>
+    {% else %}
+        {% for table in endurance_tables %}
+            {{ table|safe }}
+        {% endfor %}
+</div>
 
-    <div id="chart_2" style="margin-top:50px;"></div>
+    <div id="right_side" style="margin-top:20px; float:right;">
+    <div id="chart_2"></div>
     <script type='text/javascript'>
         var graphs = {{graphJSON_2 | safe}};
         Plotly.plot('chart_2',graphs,{});
     </script>
+    </div>
+
 {% endif %}
 
-<ul>
-    <li><a href="">Globale</a></li>
-    <li><a href="">Force</a></li>
-    <li><a href="">Endurance</a></li>
-</ul>
+<p><a href="{{url_for('add_cycle', exercise_id=exercise_id, user_id=current_user.id)}}">Ajouter cycle</a></p>
+
+{% if has_cycle_data %}
+    <ul>
+        {% for cycle in all_cycles %}
+            <li>
+                {% if cycle.ending_date != 'Undetermined' %}
+                    <a href="{{url_for('get_cycle_details', user_id=current_user.id, cycle_id=cycle.id)}}">
+                        <p>{{cycle.name}} : du {{cycle.starting_date}} au {{cycle.ending_date}}</p>
+                    </a>
+                {% else %}
+                    <a href="{{url_for('get_cycle_details', user_id=current_user.id, cycle_id=cycle.id)}}">
+                        <p>{{cycle.name}} : à partir du {{cycle.starting_date}}</p>
+                    {% endif %}
+                    </a>
+            </li>
+        {% endfor %}
+    </ul>
+
+
+{% else %}
+    <p>Vous n'avez pas encore ajouté de cycle pour cet exercice.</p>
+{% endif %}
+
+<p><a href="{{url_for('secondary_exercises', user_id=current_user.id, exercise_id=exercise_id)}}">Mes exercises secondaires</a></p>
+
+<div id="left_side" style="margin-top:230px; float:left;">
+    <ul>
+        <li><a href="">Globale</a></li>
+        <li><a href="">Force</a></li>
+        <li><a href="">Endurance</a></li>
+    </ul>
+</div>
 
 </body>
 </html>

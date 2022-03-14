@@ -18,8 +18,8 @@ class DataframeManager:
                 "Date": exercise_performance.date_performance,
                 "Exercice": exercise_performance.exercise.exercise_name.title(),
                 "Performance globale": exercise_performance.global_performance,
-                "Notes": exercise_performance.notes,
-                "Sommeil": exercise_performance.sleep_time
+                "Notes": exercise_performance.notes if exercise_performance.notes is not None else '-',
+                "Sommeil": exercise_performance.sleep_time if exercise_performance.sleep_time is not None else '-'
             }
             df_global_exercise_performance = df_global_exercise_performance.append(new_row, ignore_index=True)
 
@@ -31,8 +31,8 @@ class DataframeManager:
         for perf in all_performances:
             df = df.append({'Date': perf.date_performance,
                                           'Performance globale': perf.global_performance,
-                                          'Notes': perf.notes,
-                                          'Sommeil': perf.sleep_time},
+                                          'Notes': perf.notes if perf.notes is not None else '-',
+                                          'Sommeil': perf.sleep_time if perf.sleep_time is not None else '-'},
                                          ignore_index=True)
 
         return df.sort_values(by='Date', ascending=False)
@@ -40,9 +40,9 @@ class DataframeManager:
     def create_specific_df(self, highest_reps, all_performances, reps_range):
         """
         :param highest_reps: Highest value of repetition
-        :param all_performances: List object of all_performances for an exercise
-        :param reps_range: Min repetitions to max repetitions
-        :return: Pandas DataFrame
+        :param all_performances: List of all_performances object for an exercise
+        :param reps_range: List of min repetitions to max repetitions
+        :return: Pandas dataFrame
         """
         df = pd.DataFrame(columns=['Date'])
 
@@ -69,6 +69,26 @@ class DataframeManager:
 
         df = df.fillna(0)
         df = df.groupby('Date').max().reset_index().replace(to_replace=0, value='-')
+
+        return df.sort_values(by='Date', ascending=False)
+
+    def add_rpe_to_df(self, df, all_performances, reps_range):
+        """
+        :param df: Specific dataframe based on create_specific_df method
+        :param all_performances: List of all_performances object for an exercise
+        :param reps_range: List of min repetitions to max repetitions
+        :return: Pandas dataframe which include RPE
+        """
+
+        for perf in all_performances:
+            if perf.repetitions in reps_range:
+                if perf.rpe is not None:
+                    if perf.repetitions > 1:
+                        df.loc[(df[f'{perf.repetitions} répétitions'] == perf.weight) & (df[
+                                                                                             'Date'] == perf.date), f'{perf.repetitions} répétitions'] = f'{perf.weight}@{perf.rpe}'
+                    else:
+                        df.loc[(df[f'{perf.repetitions} répétition'] == perf.weight) & (df[
+                                                                                            'Date'] == perf.date), f'{perf.repetitions} répétition'] = f'{perf.weight}@{perf.rpe}'
 
         return df.sort_values(by='Date', ascending=False)
 
@@ -101,8 +121,8 @@ class DataframeManager:
                 'Performance_id': perf.id,
                 'Date': perf.date_performance,
                 'Performance globale': perf.global_performance,
-                'Notes': perf.notes,
-                'Sommeil': perf.sleep_time
+                'Notes': perf.notes if perf.notes is not None else '-',
+                'Sommeil': perf.sleep_time if perf.sleep_time is not None else '-'
             }, ignore_index=True)
 
         df_exercise = df_exercise.sort_values(by='Date', ascending=False)
@@ -110,6 +130,3 @@ class DataframeManager:
         df_exercise['Delete'] = "Supprimer"
 
         return df_exercise
-
-
-

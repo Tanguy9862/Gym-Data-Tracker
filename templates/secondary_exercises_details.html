@@ -1,0 +1,34 @@
+{% include "header.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <p><i class="far fa-info-circle"></i> {{ message }}</p>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+{% if has_list_data %}
+
+    {{ wtf.quick_form(form, novalidate=True) }}
+
+    <br><br>
+    <h3>Vos listes d'exercices secondaires :</h3>
+
+        <ul>
+        {% for list in all_secondary_exercises_list %}
+            <li>
+                <a href="{{url_for('secondary_exercises_list_resume', user_id=current_user.id, list_id=list.id)}}">{{list.list_name}}</a>
+            </li>
+        {% endfor %}
+        </ul>
+
+{% else %}
+
+<p><i class="far fa-info-circle"></i> Vous devez d'abord créer une liste d'exercices secondaires pour y ajouter des données. <br><a href="{{url_for('add_list_for_secondary_exercises', user_id=current_user.id, exercise_id=exercise_id)}}">Cliquez ici</a> pour en créer une</p>
+
+{% endif %}
+
+</body>
+</html>

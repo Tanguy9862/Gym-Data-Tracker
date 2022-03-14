@@ -1,0 +1,32 @@
+{% include "header.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <p><i class="far fa-info-circle"></i> {{ message }}</p>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form action="{{url_for('add_secondary_exercises_performance', user_id=current_user.id, list_id=list_id, exercise_id=exercise_id, performance_id=performance_id)}}" method="post">
+
+    {% for nd_exercise in secondary_exercises_data %}
+        {% if " " in nd_exercise.secondary_exercise_name %}
+            {% set current_exercise = nd_exercise.secondary_exercise_name | replace(' ', '-') %}
+        {% else %}
+            {% set current_exercise = nd_exercise.secondary_exercise_name %}
+        {% endif %}
+        <br>
+        <label>
+            {{nd_exercise.secondary_exercise_name}}
+            <input type="text" name={{current_exercise}}>
+        </label>
+    {% endfor %}
+    <br><br>
+    <input type="submit" name="save" value="Enregistrer">
+</form>
+
+
+</body>
+</html>

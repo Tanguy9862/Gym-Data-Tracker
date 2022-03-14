@@ -2,17 +2,9 @@ Graphiques:
 	* https://plotly.com/python/line-charts/
 	* https://plotly.com/python/line-and-scatter/ -> 'Connected Scatterplots'
 	- Graphique (RPE - charge ; 2 ordonnées) en fn de la date
-	- Graphique sleep_time c.f 'intégration du sleep time'
 
-Page WILKS:
-    - erreur quand on essaye de charger la page sans avoir enregistré de données
-
-Affichage du RPE dans les DF spécifiques (si celui-ci existe)
-
-Retravailler pr_details table:
-    - Supprimer 'max_squat/deadlift/bench', récupérer le mouvement par le lift_id
-    - Colonne 'weight'
-    - lift_id 0 = squat, 1 = bench, 2 = deadlift
+Quand on ajoute/edit une perf :
+- Evaluer le feeling de l'ensemble de la séance sur une échelle de 1 à 10
 
 Retravailler pr_details:
     - Le BW sera initialement enregistré dans la table user_info
@@ -20,31 +12,69 @@ Retravailler pr_details:
     - Quand on change son BW : on change celui de user_info
         ->  donc la trace de tous les BW sera gardée dans pr_details
 
-WILKS page:
-    - /!\ Quand on supprime un PR le dernier graph n'est pas MAJ
+Penser à retravailler les routes avec le user_id car il n'est jamais nécessaire donc tout modifier et réadapter
+Vérifier ds la fonction load_user s'il faut utiliser current_user.id ou user_id
 
-Intégration du tempo
+Dans les paramètres:
+- Ajouter la possibilité de pouvoir créer son tableau personnalisé et de l'associer à un exo primaire(pour le résumé des perfs par exercice)
+- Demander dans un input d'écrire le nb de répétitions souhaitées(peut être des ranges aussi?) et les séparer par une virgule
+- Demander le titre du tableau
+- A partir de ça ds une nouvelle table récupérer ses données et via ses données créer le tableau ds le résumé des perfs de l'exercice en question
+    - générer le tableau
+    - générer un graphique avec des courbes par répétitions
 
-Intégration du sleep time
-    - Graphique avec des points dont le diamètre augmente en fonction de la charge et vire au rouge si sommeil insuffisant
+Quand on ajoute et edit une performance :
+    - Possibilité de spécifier 'BW' ou 'PDC' à la place de la charge
+    - attention à la façon de le prendre en compte dans la base de d. + façon de générer les graph (erreurs?)
+
+track_rm :
+- Terminer le graphique (mettre graphique scale avec text qui affiche le BW)
+- graphique stacked area chart : https://plotly.com/python/filled-area-plots/
+
+wilks :
+- terminer le graphique histogramme (ou barchart)
+
+dashbnoard :
+- Terminer le graphique sommeil, enlever les heures sur le graphique (doivent être présentes seulement
+sur le hover, attention à mettre uniquement la bonne heure)
+- changer couleur bubble chart
+- graph histo : trier le df pour le sortir avec les values avc le nb moyen de répétitions ds l'ordre décroissant
+- utiliser l'objet sleep convertor et supprimer la fonction de la route (pour convertir le sommeil en value)
+
+Bubble chart du nombre de séries par exercice en fonction du temps
+    - 1 bulle = 1 exercice, diamètre en fonction du nb de séries durant la journée
 
 Développer la page profil user:
-    - Bio
+    - c.f canva
+
+Penser à ajouter un sélecteur sur les graphiques qui prend en compte le temps:
+    - ex un sélecteur pour 1 mois, 3 mois, 6 mois, etc. c.f docplotly (par ex doc times series chart)
+    - dashboard : tx de séries par exercice durant ce mois
+    - get_workout_details : nb total de rep par seance sur cet exo/ + graph axe force + graph axe endurance + ajouter
+    sur graph force/endurance second y-axis avec le RPE
+    - track_rm : sur le graph des rm
+    - wilks : evolution du wilks en fn du temps
+    - + penser à retirer la pub plotly qd on hover
+    - + penser à écrire les col des df en anglais (pr l'info qd on passe la souris sur le graph)
 
 Page paramètres:
+    - Pouvoir importer des données .csv à ses exercices (le faire aussi pour les exo secondaires ?)
     - Pouvoir modifier son mot de passe
     - Pouvoir modifier son email
-    - Choisir sa catégorie powerlifting (influence sur la prédiction de données)
+    - Choisir sa catégorie powerlifting (influence sur la prédiction de données)/ ou en fn de l'âge ?
     - Résilier son abonnement premium
 
-Empêcher le fait d'ajouter un exercice si l'utilisateur en a déjà ajouté un du même nom auparavant
+Ajout d'une option 'cycle':
+    - Pouvoir supprimer un cycle
+    - Proposer la possibilité de choisir le nb de reps à tracker pour le tableau début VS fin
+    - A la fin du cycle : résumé des perfs, comparatifs avec celles du début etc, % d'augmentation/diminution, etc, + graph
+        - graph avec proportion de séries de 1 rep, 2 reps, 3 reps etc (puis range genre 8-10, 15+)
+        - c.f maquette sur canvas
 
 Ajout du  Token CSRF pour les form basiques:
     -> edit_performance
     -> login
-
-Intégration des échecs ?
-    -> Par exemple 5 reps à X kg au lieu de n reps prévues initialement
+    -> tout vérifier
 
 Envoyer un email lors de l'inscription
 
@@ -69,5 +99,11 @@ Prédiction de données:
     - Prédire les futurs max sur 1 rep
         -> utiliser la data des compétitions de power des anciennes années
         -> prise en compte de la catégorie de power + bw + sexe
+
+---------------------------------------
+Futurs ajouts :
+
+Intégration des échecs ?
+    -> Par exemple 5 reps à X kg au lieu de n reps prévues initialement
 
 

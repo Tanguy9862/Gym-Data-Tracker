@@ -9,6 +9,13 @@
     <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
     <link rel="stylesheet" href="../static/css/main.css"/>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <style>
+        body {
+            background-color: #0c2568;
+            color: #fff;
+        }
+    </style>
 </head>
 <body>
 {% if is_logged %}
@@ -16,7 +23,7 @@
     <img src="https://avatars.dicebear.com/api/miniavs/{{current_user.username}}.svg?b=%2333276d&r=50&size=100&scale=92" style="float:left; margin-right: 15px; margin-bottom: 10px;">
 </a>
 <h1>{{title_content}}</h1>
-<a href="{{url_for('show_workout', user_id=current_user.id)}}">Ajouter une nouvelle performance</a>
+<a href="{{url_for('show_workout')}}">Ajouter une nouvelle performance</a>
 <a href="{{url_for('search_user')}}">Rechercher un utilisateur</a>
 <a href="{{url_for('track_rm', user_id=current_user.id)}}">Tracker ses RM</a>
 <a href="{{url_for('wilks', user_id=current_user.id)}}">WILKS Détails</a>
